@@ -141,10 +141,22 @@ def handle_web_app_data(chat_id, raw_data, user_id):
     admin_result = call_telegram("sendMessage", {"chat_id": target_chat, "text": text})
     print(f"admin_result={admin_result}")
 
+    # ВРЕМЕННО: показываем результат пересылки админу прямо в сообщении
+    # покупателю, чтобы не зависеть от чтения логов Vercel. Уберём после
+    # того, как найдём причину.
+    if admin_result and admin_result.get("ok"):
+        debug_line = f"\n\n[debug: админ-сообщение ушло в чат {target_chat}, msg_id={admin_result.get('result',{}).get('message_id')}]"
+    else:
+        debug_line = (
+            f"\n\n[debug: ОШИБКА пересылки в чат {target_chat}: "
+            f"code={admin_result.get('error_code')}, {admin_result.get('description')}]"
+        )
+
     confirm_result = send_message(
         chat_id,
         f"Спасибо! Заказ №{order.get('orderId', '')} принят. "
-        f"Мы свяжемся с вами для подтверждения.",
+        f"Мы свяжемся с вами для подтверждения."
+        f"{debug_line}",
         reply_markup={"remove_keyboard": True},
     )
     print(f"Заказ {order.get('orderId')} от user_id={user_id} обработан")
