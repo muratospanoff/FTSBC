@@ -801,7 +801,7 @@ const PRODUCTS = [
     "volume": 0.7,
     "minOrder": 6,
     "price": 33340,
-    "image": ""
+    "image": "images/73.jpg"
   },
   {
     "id": 74,
