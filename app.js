@@ -19,6 +19,22 @@ let currentScreen = 'screen-age';
 
 // ---------- Инициализация Telegram WebApp ----------
 
+// ВРЕМЕННО: диагностика на экране, чтобы понять, почему inTelegram может
+// определяться неверно на реальном устройстве. Уберём после отладки.
+(function showDebugInfo() {
+  const el = document.getElementById('debug-info');
+  if (!el) return;
+  const info = {
+    tg_exists: !!tg,
+    initData_length: tg ? (tg.initData || '').length : null,
+    platform: tg ? tg.platform : null,
+    version: tg ? tg.version : null,
+    inTelegram: inTelegram,
+    url: window.location.href,
+  };
+  el.textContent = 'debug: ' + JSON.stringify(info);
+})();
+
 if (tg) {
   tg.ready();
   tg.expand();
