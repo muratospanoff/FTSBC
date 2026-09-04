@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>FORCE TRADE SERVICE</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ЭКРАН 0: Подтверждение возраста -->
+  <section id="screen-age" class="screen active">
+    <div class="age-wrap">
+      <div class="age-logo">FORCE TRADE SERVICE</div>
+      <div class="age-emoji">🔞</div>
+      <p class="age-text">
+        Электронная витрина магазина алкогольных напитков содержит информацию, не рекомендованную
+        для лиц, младше 21 года. Сведения, размещённые на канале, не являются рекламой, носят
+        исключительно информационный характер и предназначены только для личного использования.
+      </p>
+      <p class="age-text age-text--strong">
+        Мы категорически против употребления алкоголя несовершеннолетними.
+      </p>
+      <p class="age-text">
+        Подтверждая свой возраст и продолжая просмотр канала, вы принимаете
+        <a href="#" id="link-offer">оферту</a> и
+        <a href="#" id="link-privacy">политику конфиденциальности</a>.
+      </p>
+      <div class="age-actions">
+        <button class="btn btn-primary" id="btn-age-yes">Подтверждаю, мне есть 21</button>
+        <button class="btn btn-ghost" id="btn-age-no">Мне нет 21 года</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ЭКРАН: Доступ ограничён -->
+  <section id="screen-denied" class="screen">
+    <div class="center-wrap">
+      <div class="age-emoji">🚫</div>
+      <h2>Доступ ограничён</h2>
+      <p class="age-text">
+        К сожалению, вы не можете пользоваться этим магазином. Продажа и демонстрация
+        алкогольной продукции лицам младше 21 года запрещена.
+      </p>
+    </div>
+  </section>
+
+  <!-- ЭКРАН 1: Витрина — выбор категории -->
+  <section id="screen-categories" class="screen">
+    <header class="topbar">
+      <div class="topbar-title">Витрина FORCE TRADE SERVICE</div>
+      <div class="topbar-sub">Выберите категорию напитков</div>
+    </header>
+    <div class="grid-cards" id="categories-list"></div>
+  </section>
+
+  <!-- ЭКРАН 2: Выбор страны -->
+  <section id="screen-countries" class="screen">
+    <header class="topbar">
+      <button class="back-inline" id="back-from-countries">‹ Назад</button>
+      <div class="topbar-title" id="countries-title">Страна</div>
+      <div class="topbar-sub">Выберите страну-производителя</div>
+    </header>
+    <div class="grid-cards" id="countries-list"></div>
+  </section>
+
+  <!-- ЭКРАН 3: Каталог товаров -->
+  <section id="screen-products" class="screen">
+    <header class="topbar">
+      <button class="back-inline" id="back-from-products">‹ Назад</button>
+      <div class="topbar-title" id="products-title">Товары</div>
+      <div class="topbar-sub" id="products-sub"></div>
+    </header>
+    <div id="products-list" class="products-list"></div>
+  </section>
+
+  <!-- ЭКРАН 4: Корзина -->
+  <section id="screen-cart" class="screen">
+    <header class="topbar">
+      <button class="back-inline" id="back-from-cart">‹ Назад</button>
+      <div class="topbar-title">Корзина</div>
+      <div class="topbar-sub" id="cart-sub"></div>
+    </header>
+    <div id="cart-list" class="products-list"></div>
+    <div class="cart-empty" id="cart-empty-msg" style="display:none">
+      <div class="age-emoji">🛒</div>
+      <p>Корзина пуста.<br>Вернитесь в каталог, чтобы выбрать напитки.</p>
+      <button class="btn btn-primary" id="btn-cart-goshop">К витрине</button>
+    </div>
+    <div class="cart-summary" id="cart-summary" style="display:none">
+      <div class="cart-summary-row"><span>Позиций</span><span id="cart-count">0</span></div>
+      <div class="cart-summary-row cart-summary-total"><span>Итого</span><span id="cart-total">0 ₸</span></div>
+      <button class="btn btn-secondary" id="btn-continue-shopping">Продолжить покупки</button>
+    </div>
+  </section>
+
+  <!-- ЭКРАН 5: Оформление заказа -->
+  <section id="screen-checkout" class="screen">
+    <header class="topbar">
+      <button class="back-inline" id="back-from-checkout">‹ Назад</button>
+      <div class="topbar-title">Оформление заказа</div>
+      <div class="topbar-sub">Заполните данные для связи</div>
+    </header>
+    <form id="checkout-form" class="checkout-form">
+      <label class="field">
+        <span>Имя и фамилия *</span>
+        <input type="text" id="f-name" required placeholder="Иван Иванов" autocomplete="name">
+      </label>
+      <label class="field">
+        <span>Телефон *</span>
+        <input type="tel" id="f-phone" required placeholder="+7 700 000 00 00" autocomplete="tel">
+      </label>
+      <div class="field">
+        <span>Способ получения *</span>
+        <div class="segmented">
+          <button type="button" class="segmented-btn active" data-method="delivery">Доставка</button>
+          <button type="button" class="segmented-btn" data-method="pickup">Самовывоз</button>
+        </div>
+      </div>
+      <label class="field" id="field-address">
+        <span>Адрес доставки *</span>
+        <input type="text" id="f-address" placeholder="Город, улица, дом, кв.">
+      </label>
+      <label class="field">
+        <span>Комментарий к заказу</span>
+        <textarea id="f-comment" rows="3" placeholder="Например: удобное время доставки"></textarea>
+      </label>
+
+      <div class="checkout-order-summary">
+        <div class="checkout-order-title">Ваш заказ</div>
+        <div id="checkout-items"></div>
+        <div class="cart-summary-row cart-summary-total"><span>Итого</span><span id="checkout-total">0 ₸</span></div>
+      </div>
+
+      <label class="checkbox-row">
+        <input type="checkbox" id="f-agree">
+        <span>Я подтверждаю, что мне есть 21 год, и принимаю условия оферты и политику конфиденциальности</span>
+      </label>
+
+      <button type="submit" class="btn btn-primary" id="btn-submit-order">Отправить заказ</button>
+    </form>
+  </section>
+
+  <!-- ЭКРАН 6: Заказ принят -->
+  <section id="screen-success" class="screen">
+    <div class="center-wrap">
+      <div class="age-emoji">✅</div>
+      <h2>Заказ №<span id="success-order-id"></span> принят!</h2>
+      <p class="age-text">Мы свяжемся с вами в ближайшее время для подтверждения заказа и уточнения деталей.</p>
+      <button class="btn btn-primary" id="btn-success-close">Закрыть</button>
+    </div>
+  </section>
+
+  <!-- Плавающая панель корзины -->
+  <div id="cart-bar" class="cart-bar" style="display:none">
+    <div class="cart-bar-info">
+      <span id="cart-bar-count">0 товаров</span>
+      <span id="cart-bar-total">0 ₸</span>
+    </div>
+    <button class="btn btn-primary btn-cart-bar" id="btn-open-cart">Корзина →</button>
+  </div>
+
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

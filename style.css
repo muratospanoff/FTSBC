@@ -1,0 +1,354 @@
+/* Внутри Telegram цвета всегда приходят через --tg-theme-* (их подставляет
+   telegram-web-app.js с наивысшим приоритетом). Блоки ниже — резервная
+   палитра на случай предпросмотра вне Telegram (обычный браузер / Artifact). */
+
+:root {
+  --bg: var(--tg-theme-bg-color, #ffffff);
+  --secondary-bg: var(--tg-theme-secondary-bg-color, #f2f0eb);
+  --text: var(--tg-theme-text-color, #201a17);
+  --hint: var(--tg-theme-hint-color, #8a7f78);
+  --link: var(--tg-theme-link-color, #a6741f);
+  --button: var(--tg-theme-button-color, #7c1f34);
+  --button-text: var(--tg-theme-button-text-color, #ffffff);
+  --card-bg: var(--tg-theme-section-bg-color, #ffffff);
+  --border: rgba(32,26,23,0.09);
+  --danger: #d64545;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: var(--tg-theme-bg-color, #17181c);
+    --secondary-bg: var(--tg-theme-secondary-bg-color, #0f1014);
+    --text: var(--tg-theme-text-color, #f1ede9);
+    --hint: var(--tg-theme-hint-color, #93898c);
+    --link: var(--tg-theme-link-color, #d7a54a);
+    --button: var(--tg-theme-button-color, #a13350);
+    --card-bg: var(--tg-theme-section-bg-color, #212227);
+    --border: rgba(255,255,255,0.08);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: var(--tg-theme-bg-color, #17181c);
+  --secondary-bg: var(--tg-theme-secondary-bg-color, #0f1014);
+  --text: var(--tg-theme-text-color, #f1ede9);
+  --hint: var(--tg-theme-hint-color, #93898c);
+  --link: var(--tg-theme-link-color, #d7a54a);
+  --button: var(--tg-theme-button-color, #a13350);
+  --card-bg: var(--tg-theme-section-bg-color, #212227);
+  --border: rgba(255,255,255,0.08);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  min-height: 100vh;
+  padding-top: var(--safe-top);
+}
+
+.screen {
+  display: none;
+  padding-bottom: calc(96px + var(--safe-bottom));
+  min-height: 100vh;
+  animation: fadeIn .18s ease;
+}
+.screen.active { display: block; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: translateY(0);} }
+
+/* ---------- Общие элементы ---------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg);
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.topbar-title { font-size: 20px; font-weight: 700; }
+.topbar-sub { font-size: 13px; color: var(--hint); margin-top: 2px; }
+.back-inline {
+  border: none;
+  background: none;
+  color: var(--link);
+  font-size: 15px;
+  padding: 0 0 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: opacity .15s ease, transform .1s ease;
+}
+.btn:active { transform: scale(0.98); }
+.btn-primary { background: var(--button); color: var(--button-text); }
+.btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+.btn-secondary { background: var(--secondary-bg); color: var(--text); margin-top: 10px; }
+.btn-ghost { background: transparent; color: var(--hint); font-weight: 500; padding: 10px; }
+
+/* ---------- Экран возраста ---------- */
+
+.age-wrap {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 32px 20px 24px;
+  text-align: center;
+}
+.center-wrap {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 60px 24px;
+  text-align: center;
+}
+.age-logo {
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: var(--hint);
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+.age-emoji { font-size: 54px; margin-bottom: 12px; }
+.age-text {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--text);
+  text-align: left;
+  margin: 0 0 14px;
+}
+.age-text--strong { font-weight: 700; }
+.age-text a { color: var(--link); text-decoration: underline; }
+.age-actions { margin-top: 24px; display: flex; flex-direction: column; gap: 10px; }
+
+/* ---------- Карточки категорий/стран ---------- */
+
+.grid-cards {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform .1s ease, box-shadow .15s ease;
+}
+.card:active { transform: scale(0.97); }
+.card-icon { font-size: 34px; margin-bottom: 8px; }
+.card-title { font-weight: 700; font-size: 15px; }
+.card-sub { font-size: 12px; color: var(--hint); margin-top: 3px; }
+
+/* ---------- Список товаров ---------- */
+
+.products-list { padding: 12px 16px 8px; }
+.brand-heading {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--hint);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  margin: 18px 4px 8px;
+}
+.brand-heading:first-child { margin-top: 4px; }
+
+.product-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.product-thumb {
+  position: relative;
+  width: 52px;
+  height: 68px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--secondary-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.thumb-emoji { font-size: 22px; opacity: .55; }
+.thumb-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.product-info { flex: 1; min-width: 0; }
+.product-name { font-size: 14.5px; font-weight: 600; line-height: 1.35; }
+.product-meta { font-size: 12.5px; color: var(--hint); margin-top: 4px; }
+.product-price { font-size: 15px; font-weight: 700; margin-top: 6px; }
+.product-minorder { font-size: 11.5px; color: var(--hint); margin-top: 2px; }
+
+.qty-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.qty-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: none;
+  background: var(--secondary-bg);
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qty-btn:active { transform: scale(0.92); }
+.qty-value { min-width: 24px; text-align: center; font-weight: 700; font-size: 14px; }
+
+.btn-add {
+  background: var(--button);
+  color: var(--button-text);
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-add:active { transform: scale(0.95); }
+
+/* ---------- Корзина ---------- */
+
+.cart-empty { text-align: center; padding: 60px 24px; color: var(--hint); }
+.cart-empty p { line-height: 1.5; margin: 10px 0 20px; }
+
+.cart-summary {
+  position: sticky;
+  bottom: calc(0px + var(--safe-bottom));
+  margin: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+.cart-summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--hint);
+  padding: 2px 0;
+}
+.cart-summary-total {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  padding-top: 6px;
+}
+
+/* ---------- Плавающая панель корзины ---------- */
+
+.cart-bar {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + var(--safe-bottom));
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+  padding: 10px 10px 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 20;
+}
+.cart-bar-info { display: flex; flex-direction: column; font-size: 12.5px; color: var(--hint); }
+.cart-bar-info span:last-child { font-size: 15px; font-weight: 700; color: var(--text); }
+.btn-cart-bar { width: auto; padding: 10px 18px; }
+
+/* ---------- Форма оформления заказа ---------- */
+
+.checkout-form { padding: 16px; }
+.field { display: block; margin-bottom: 14px; }
+.field span { display: block; font-size: 13px; color: var(--hint); margin-bottom: 6px; font-weight: 600; }
+.field input, .field textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 15px;
+  font-family: inherit;
+  resize: vertical;
+}
+.field input:focus, .field textarea:focus { outline: 2px solid var(--button); }
+
+.segmented { display: flex; background: var(--secondary-bg); border-radius: 10px; padding: 3px; }
+.segmented-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+.segmented-btn.active { background: var(--card-bg); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+
+.checkout-order-summary {
+  background: var(--secondary-bg);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 18px 0;
+}
+.checkout-order-title { font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+.checkout-item-row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; color: var(--text); }
+.checkout-item-row .qty { color: var(--hint); }
+
+.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--hint);
+  line-height: 1.4;
+  margin-bottom: 18px;
+}
+.checkbox-row input { margin-top: 2px; }
+
+@media (min-width: 600px) {
+  .age-wrap, .center-wrap, .checkout-form, .products-list, .grid-cards { max-width: 560px; margin-left: auto; margin-right: auto; }
+}
