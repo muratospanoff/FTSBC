@@ -406,6 +406,20 @@ document.getElementById('checkout-form').addEventListener('submit', (e) => {
     createdAt: new Date().toISOString(),
   };
 
+  // У Telegram.WebApp.sendData() жёсткий лимит 4096 байт на строку. Если
+  // превысить — Telegram может ничего не сообщить об ошибке, просто заказ
+  // не долетит до бота, а покупатель увидит "успех". Поэтому проверяем
+  // ДО отправки и не даём молча потерять заказ.
+  const orderJson = JSON.stringify(order);
+  const orderBytes = new TextEncoder().encode(orderJson).length;
+  if (inTelegram && tg.sendData && orderBytes > 4000) {
+    haptic('error');
+    const msg = 'Заказ слишком большой для отправки (много позиций). ' +
+      'Пожалуйста, оформите его двумя отдельными заказами.';
+    if (tg.showAlert) tg.showAlert(msg); else alert(msg);
+    return; // корзину не трогаем — можно поправить и отправить заново
+  }
+
   document.getElementById('success-order-id').textContent = order.orderId;
   haptic('success');
 
@@ -415,13 +429,18 @@ document.getElementById('checkout-form').addEventListener('submit', (e) => {
   // так заказ рискует не долететь до бота вообще.
   if (inTelegram && tg.sendData) {
     try {
+      tg.sendData(orderJson);
       state.cart = {};
       saveCart();
-      tg.sendData(JSON.stringify(order));
       return; // sendData сам закрывает Mini App внутри Telegram
     } catch (err) {
-      // метод недоступен (например, запуск не через reply-кнопку) — просто
-      // показываем экран подтверждения ниже, как в браузере
+      // Реальный сбой вызова (например, запуск не через reply-кнопку).
+      // НЕ показываем "успех" — покупатель должен знать, что заказ не ушёл.
+      haptic('error');
+      const msg = 'Не удалось отправить заказ. Попробуйте ещё раз или ' +
+        'напишите нам напрямую в чат.';
+      if (tg.showAlert) tg.showAlert(msg); else alert(msg);
+      return; // корзина не тронута — можно повторить попытку
     }
   }
 
