@@ -1,9 +1,13 @@
 /* FORCE TRADE SERVICE — Telegram Mini App витрины алкогольного магазина */
 
 const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-// telegram-web-app.js создаёт заглушку Telegram.WebApp даже вне клиента Telegram —
-// поэтому реальный запуск внутри Telegram определяем по непустому initData.
-const inTelegram = !!(tg && tg.initData && tg.initData.length > 0);
+// ВАЖНО: initData НЕ передаётся Telegram, если Mini App запущен через
+// reply-keyboard кнопку (а не Menu Button) — это официальное поведение,
+// не баг: https://core.telegram.org/bots/webapps. Мы специально используем
+// именно keyboard-кнопку, чтобы был доступен Telegram.WebApp.sendData().
+// Поэтому проверять initData нельзя — определяем реальный Telegram по
+// platform (вне Telegram SDK-заглушка отдаёт 'unknown').
+const inTelegram = !!(tg && tg.platform && tg.platform !== 'unknown');
 
 // ---------- Состояние приложения ----------
 
