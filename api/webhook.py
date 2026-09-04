@@ -33,6 +33,12 @@ WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "")
 API_BASE = f"https://api.telegram.org/bot{BOT_TOKEN}"
 SHOP_BUTTON_TEXT = "🛍 Открыть витрину"
 
+# Telegram-клиенты (особенно мобильные WebView) иногда кешируют страницу
+# Mini App по точному URL и не подхватывают Cache-Control. Добавляем
+# версию в query — при каждом значимом деплое фронтенда меняйте эту
+# строку, чтобы /start выдавал заведомо "новый" адрес.
+BUILD_VERSION = "20260904a"
+
 
 def call_telegram(method, payload):
     data = json.dumps(payload).encode("utf-8")
@@ -93,8 +99,10 @@ def handle_start(chat_id):
             "Витрина ещё не подключена: не задан MINI_APP_URL в настройках сервера.",
         )
         return {"handler": "start", "mini_app_url_missing": True, "send": r}
+    sep = "&" if "?" in MINI_APP_URL else "?"
+    button_url = f"{MINI_APP_URL}{sep}v={BUILD_VERSION}"
     reply_markup = {
-        "keyboard": [[{"text": SHOP_BUTTON_TEXT, "web_app": {"url": MINI_APP_URL}}]],
+        "keyboard": [[{"text": SHOP_BUTTON_TEXT, "web_app": {"url": button_url}}]],
         "resize_keyboard": True,
     }
     r = send_message(
