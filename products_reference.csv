@@ -22,11 +22,11 @@ id,category,country,brand,name,volume,has_image
 21,Вино,Грузия,Winiveria,Вино белое сухое Хихви Winiveria,0.75,да
 22,Вино,Грузия,Winiveria,Вино белое сухое Цинандали Winiveria,0.75,да
 23,Вино,Грузия,Winiveria,Вино розовое полусухое Френч Winiveria,0.75,да
-24,Вино,Италия,Tralcio,Вино белое сухое Tralcio Bianko,5,
-25,Вино,Италия,Tralcio,Вино белое полусладкое Tralcio Bianko semi sweet,5,
-26,Вино,Италия,Tralcio,Вино красное сухое Tralcio Rosso,5,
-27,Вино,Италия,Tralcio,Вино красное полусладкое Tralcio Rosso semi sweet,5,
-28,Вино,Италия,Casa Defra,Вино красное сухое Amarone Casa Defra,0.75,
+24,Вино,Италия,Tralcio,Вино белое сухое Tralcio Bianko,5,да
+25,Вино,Италия,Tralcio,Вино белое полусладкое Tralcio Bianko semi sweet,5,да
+26,Вино,Италия,Tralcio,Вино красное сухое Tralcio Rosso,5,да
+27,Вино,Италия,Tralcio,Вино красное полусладкое Tralcio Rosso semi sweet,5,да
+28,Вино,Италия,Casa Defra,Вино красное сухое Amarone Casa Defra,0.75,да
 29,Вино,Италия,Casa Defra,Вино красное сухое Cabernet Sauvignon Casa Defra,0.75,да
 30,Вино,Италия,Casa Defra,Вино белое сухое Chardonnay Casa Defra,0.75,да
 31,Вино,Италия,Casa Defra,Вино красное сухое Merlot Casa Defra,0.75,да
@@ -38,14 +38,14 @@ id,category,country,brand,name,volume,has_image
 37,Вино,Италия,Freschello,Вино красное полусухое Freschello Rosso,0.75,да
 38,Вино,Италия,Freschello,Вино красное полусладкое Freschello Rosso,0.75,да
 39,Вино,Италия,Freschello,Вино красное сухое Gran Bericanto Riserva,0.75,да
-40,Вино,Италия,Terre di Mario,Вино белое полусухое Terre di Mario Bianco,0.75,
+40,Вино,Италия,Terre di Mario,Вино белое полусухое Terre di Mario Bianco,0.75,да
 41,Вино,Италия,Terre di Mario,Вино красное сухое Terre di Mario Montepulciano d’Abruzzo,0.75,да
 42,Вино,Италия,Terre di Mario,Вино белое сухое Terre di Mario Pinot Grigio d’Abruzzo,0.75,да
-43,Вино,Италия,Terre di Mario,Вино красное полусухое Terre di Mario Rosso,0.75,
+43,Вино,Италия,Terre di Mario,Вино красное полусухое Terre di Mario Rosso,0.75,да
 44,Вино,Италия,Capo Zafferano,Вино красное полусухое Primitivo Puglia Capo Zafferano,0.75,да
 45,Вино,Италия,Capo Zafferano,Вино красное сухое Negroamaro Puglia Capo Zafferano,0.75,да
 46,Вино,Италия,Capo Zafferano,Вино красное сухое Primitivo di Manduria Capo Zafferano,0.75,да
-47,Вино,Италия,Scantianum,Вино красное сухое Sangiovese Scantianum,0.75,
+47,Вино,Италия,Scantianum,Вино красное сухое Sangiovese Scantianum,0.75,да
 48,Вино,Италия,Scantianum,Вино белое сухое Vermentino Toscana Scantianum,0.75,да
 49,Вино,Италия,Scantianum,Вино красное сухое Sangiovese Toscano Vin del Fattore,0.75,да
 50,Вино,Франция,Lafage,Вино белое сухое Miraflors Lafabuleuse Lafage,0.75,да
@@ -55,20 +55,20 @@ id,category,country,brand,name,volume,has_image
 54,Вино,Франция,Beauvignac,Вино белое сухое Chardonnay Beauvignac,0.75,да
 55,Вино,Франция,Beauvignac,Вино красное сухое Cabernet Sauvignon Beauvignac,0.75,да
 56,Вино,Франция,Beauvignac,Вино белое полусладкое Le Moelleux Blanc Beauvignac,0.75,да
-57,Вино,Франция,Beauvignac,Вино красное сухое Merlot Beauvignac,0.75,
-58,Вино,Франция,Beauvignac,Вино белое сухое Sauvignnon Blanc Beauvignac,0.75,
-59,Вино,Франция,Beauvignac,Вино красное сухое Syrah Beauvignac,0.75,
+57,Вино,Франция,Beauvignac,Вино красное сухое Merlot Beauvignac,0.75,да
+58,Вино,Франция,Beauvignac,Вино белое сухое Sauvignnon Blanc Beauvignac,0.75,да
+59,Вино,Франция,Beauvignac,Вино красное сухое Syrah Beauvignac,0.75,да
 60,Вино,Франция,Beauvignac,Вино красное сухое Vin D'une Nuit Beauvignac,0.75,да
 61,Виски,Ирландия,Kinahans,Виски Kinahans LL,0.7,да
-62,Виски,Ирландия,Kinahans,Виски Kinahans LL GB,0.7,
-63,Виски,Ирландия,Kinahans,Виски Kinahans Small Batch,0.7,
-64,Виски,Ирландия,Kinahans,Виски Kinahans Special Release Project 18 Merlot,0.7,
-65,Виски,Ирландия,Kinahans,Виски Kinahans Special Release Project 28 Amarone,0.7,
-66,Виски,Ирландия,Kinahans,Виски Kinahans Special Release Project 08 Black Oak,0.7,
-67,Виски,Ирландия,Kinahans,Виски Kinahans SRP №04 QUADRAT CASK GT,0.7,
+62,Виски,Ирландия,Kinahans,Виски Kinahans LL GB,0.7,да
+63,Виски,Ирландия,Kinahans,Виски Kinahans Small Batch,0.7,да
+64,Виски,Ирландия,Kinahans,Виски Kinahans Special Release Project 18 Merlot,0.7,да
+65,Виски,Ирландия,Kinahans,Виски Kinahans Special Release Project 28 Amarone,0.7,да
+66,Виски,Ирландия,Kinahans,Виски Kinahans Special Release Project 08 Black Oak,0.7,да
+67,Виски,Ирландия,Kinahans,Виски Kinahans SRP №04 QUADRAT CASK GT,0.7,да
 68,Виски,Ирландия,Kinahans,Виски Kinahans Single Malt Heritage Whiskey,0.7,да
-69,Виски,Ирландия,Kinahans,Виски Kinahans Single Malt Heritage Whiskey GT,0.7,
-70,Виски,Ирландия,Kinahans,Виски Kinahans Kasc Project (B) + 2 стакана,0.7,
+69,Виски,Ирландия,Kinahans,Виски Kinahans Single Malt Heritage Whiskey GT,0.7,да
+70,Виски,Ирландия,Kinahans,Виски Kinahans Kasc Project (B) + 2 стакана,0.7,да
 71,Виски,Ирландия,Lambay,Виски Lambay Single Grain,0.7,да
 72,Виски,Ирландия,Lambay,Виски Lambay Small Batch Blend,0.7,да
 73,Виски,Ирландия,Lambay,Виски Lambay Malt Irish,0.7,
@@ -77,11 +77,11 @@ id,category,country,brand,name,volume,has_image
 76,Водка,Россия,Gastronom,Водка Gastronom Купаж №7 к мясу,0.5,да
 77,Водка,Россия,Gastronom,Водка Gastronom Купаж №4 к рыбе,0.5,да
 78,Водка,Россия,Remeslo,Водка Ремесло,0.5,да
-79,Водка,Украина,Celsius,Водка особая Celsius Ice,0.5,
-80,Водка,Украина,Celsius,Водка особая Celsius Ice,0.7,
-81,Водка,Украина,Celsius,Водка особая Celsius Ice,1,
+79,Водка,Украина,Celsius,Водка особая Celsius Ice,0.5,да
+80,Водка,Украина,Celsius,Водка особая Celsius Ice,0.7,да
+81,Водка,Украина,Celsius,Водка особая Celsius Ice,1,да
 82,Водка,Украина,Celsius,Водка Celsius Classic,0.5,да
 83,Водка,Украина,Celsius,Водка Celsius Classic,0.7,да
 84,Водка,Украина,Celsius,Водка Celsius Classic,1,да
-85,Водка,Украина,Celsius,Водка Celsius Original,0.5,
-86,Водка,Украина,Celsius,Водка Celsius Original,0.7,
+85,Водка,Украина,Celsius,Водка Celsius Original,0.5,да
+86,Водка,Украина,Celsius,Водка Celsius Original,0.7,да
