@@ -949,9 +949,9 @@ const PRODUCTS = [
 ];
 
 const CATEGORY_META = {
-  'Вино':   { icon: '🍷', title: 'Вино' },
-  'Виски':  { icon: '🥃', title: 'Виски' },
-  'Водка':  { icon: '🍾', title: 'Водка' }
+  'Вино':   { icon: '🍷', title: 'Вино', image: 'images/1.jpg' },
+  'Виски':  { icon: '🥃', title: 'Виски', image: 'images/61.jpg' },
+  'Водка':  { icon: '🍾', title: 'Водка', image: 'images/82.jpg' }
 };
 
 const COUNTRY_META = {

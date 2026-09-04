@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>FORCE TRADE SERVICE</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<link rel="stylesheet" href="style.css?v=20260904d">
+<link rel="stylesheet" href="style.css?v=20260905a">
 </head>
 <body>
 
@@ -104,30 +104,80 @@
       <div class="topbar-title">Оформление заказа</div>
       <div class="topbar-sub">Заполните данные для связи</div>
     </header>
-    <form id="checkout-form" class="checkout-form">
-      <label class="field">
-        <span>Имя и фамилия *</span>
-        <input type="text" id="f-name" required placeholder="Иван Иванов" autocomplete="name">
-      </label>
-      <label class="field">
-        <span>Телефон *</span>
-        <input type="tel" id="f-phone" required placeholder="+7 700 000 00 00" autocomplete="tel">
-      </label>
+    <form id="checkout-form" class="checkout-form" novalidate>
       <div class="field">
-        <span>Способ получения *</span>
+        <span>Вы оформляете заказ как *</span>
         <div class="segmented">
-          <button type="button" class="segmented-btn active" data-method="delivery">Доставка</button>
-          <button type="button" class="segmented-btn" data-method="pickup">Самовывоз</button>
+          <button type="button" class="segmented-btn active" data-customer-type="individual">Физическое лицо</button>
+          <button type="button" class="segmented-btn" data-customer-type="company">Юридическое лицо</button>
         </div>
       </div>
-      <label class="field" id="field-address">
-        <span>Адрес доставки *</span>
-        <input type="text" id="f-address" placeholder="Город, улица, дом, кв.">
-      </label>
-      <label class="field">
-        <span>Комментарий к заказу</span>
-        <textarea id="f-comment" rows="3" placeholder="Например: удобное время доставки"></textarea>
-      </label>
+
+      <!-- Физическое лицо -->
+      <div id="fields-individual">
+        <label class="field">
+          <span>Имя и фамилия *</span>
+          <input type="text" id="f-name" placeholder="Иван Иванов" autocomplete="name">
+        </label>
+        <label class="field">
+          <span>Телефон *</span>
+          <input type="tel" id="f-phone" placeholder="+7 700 000 00 00" autocomplete="tel">
+        </label>
+        <div class="field">
+          <span>Способ получения *</span>
+          <div class="segmented">
+            <button type="button" class="segmented-btn active" data-method="delivery">Доставка</button>
+            <button type="button" class="segmented-btn" data-method="pickup">Самовывоз</button>
+          </div>
+        </div>
+        <label class="field" id="field-address">
+          <span>Адрес доставки *</span>
+          <input type="text" id="f-address" placeholder="Город, улица, дом, кв.">
+        </label>
+        <label class="field">
+          <span>Комментарий к заказу</span>
+          <textarea id="f-comment" rows="3" placeholder="Например: удобное время доставки"></textarea>
+        </label>
+      </div>
+
+      <!-- Юридическое лицо -->
+      <div id="fields-company" style="display:none">
+        <div class="field">
+          <span>Форма организации *</span>
+          <div class="segmented">
+            <button type="button" class="segmented-btn active" data-org-form="ИП">ИП</button>
+            <button type="button" class="segmented-btn" data-org-form="ТОО">ТОО</button>
+          </div>
+        </div>
+        <label class="field">
+          <span>Наименование компании *</span>
+          <input type="text" id="f-company-name" placeholder="ТОО «Компания»">
+        </label>
+        <label class="field">
+          <span>ИИН/БИН *</span>
+          <input type="text" id="f-bin" inputmode="numeric" placeholder="12 цифр">
+        </label>
+        <label class="field">
+          <span>Юридический адрес *</span>
+          <input type="text" id="f-legal-address" placeholder="Город, улица, дом, офис">
+        </label>
+        <label class="field" id="field-company-delivery-address">
+          <span>Адрес доставки *</span>
+          <input type="text" id="f-company-address" placeholder="Город, улица, дом">
+        </label>
+        <label class="checkbox-row">
+          <input type="checkbox" id="f-same-address">
+          <span>Совпадает с юридическим адресом</span>
+        </label>
+        <label class="field">
+          <span>Телефон *</span>
+          <input type="tel" id="f-company-phone" placeholder="+7 700 000 00 00" autocomplete="tel">
+        </label>
+        <label class="field">
+          <span>Комментарий к заказу</span>
+          <textarea id="f-company-comment" rows="3" placeholder="Например: удобное время доставки"></textarea>
+        </label>
+      </div>
 
       <div class="checkout-order-summary">
         <div class="checkout-order-title">Ваш заказ</div>
@@ -163,9 +213,15 @@
     <button class="btn btn-primary btn-cart-bar" id="btn-open-cart">Корзина →</button>
   </div>
 
+  <!-- Увеличенное фото товара -->
+  <div id="lightbox" class="lightbox">
+    <img id="lightbox-img" src="" alt="">
+    <div id="lightbox-caption" class="lightbox-caption"></div>
+  </div>
+
 </div>
 
-<script src="data.js?v=20260904d"></script>
-<script src="app.js?v=20260904d"></script>
+<script src="data.js?v=20260905a"></script>
+<script src="app.js?v=20260905a"></script>
 </body>
 </html>

@@ -16,6 +16,8 @@ const state = {
   category: null,
   country: null,
   method: 'delivery',
+  customerType: 'individual', // 'individual' | 'company'
+  orgForm: 'ИП',               // 'ИП' | 'ТОО'
 };
 
 const stack = [];            // стек экранов для кнопки "Назад"
@@ -134,13 +136,7 @@ function cartTotal() {
 function changeQty(id, delta) {
   const product = productById(id);
   if (!product) return;
-  let qty = state.cart[id] || 0;
-  if (qty === 0 && delta > 0) {
-    qty = product.minOrder;
-  } else {
-    qty += delta;
-  }
-  if (qty < product.minOrder) qty = 0;
+  let qty = (state.cart[id] || 0) + delta;
   if (qty <= 0) delete state.cart[id]; else state.cart[id] = qty;
   saveCart();
   haptic('select');
@@ -155,11 +151,14 @@ function renderCategories() {
     const meta = CATEGORY_META[cat] || { icon: '🍾', title: cat };
     const count = PRODUCTS.filter(p => p.category === cat).length;
     const el = document.createElement('div');
-    el.className = 'card';
-    el.innerHTML = `
-      <div class="card-icon">${meta.icon}</div>
-      <div class="card-title">${meta.title}</div>
-      <div class="card-sub">${count} позиций</div>`;
+    el.className = 'card card-photo';
+    el.innerHTML = meta.image
+      ? `<div class="card-photo-wrap"><img src="${meta.image}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='${meta.icon}'"></div>
+         <div class="card-title">${meta.title}</div>
+         <div class="card-sub">${count} позиций</div>`
+      : `<div class="card-icon">${meta.icon}</div>
+         <div class="card-title">${meta.title}</div>
+         <div class="card-sub">${count} позиций</div>`;
     el.addEventListener('click', () => {
       haptic('select');
       state.category = cat;
@@ -196,6 +195,22 @@ function renderCountries() {
   });
 }
 
+// ---------- Увеличение фото товара ----------
+
+function openLightbox(src, caption) {
+  const overlay = document.getElementById('lightbox');
+  const img = document.getElementById('lightbox-img');
+  const cap = document.getElementById('lightbox-caption');
+  img.src = src;
+  cap.textContent = caption || '';
+  overlay.classList.add('open');
+  haptic('light');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+document.getElementById('lightbox').addEventListener('click', closeLightbox);
+
 // ---------- Рендер: товары ----------
 
 function productRowHTML(p) {
@@ -203,7 +218,7 @@ function productRowHTML(p) {
   const emoji = (CATEGORY_META[p.category] || {}).icon || '🍾';
   return `
     <div class="product-card" data-id="${p.id}">
-      <div class="product-thumb">
+      <div class="product-thumb" data-action="zoom">
         <span class="thumb-emoji">${emoji}</span>
         ${p.image ? `<img class="thumb-img" src="${p.image}" alt="" loading="lazy" onerror="this.remove()">` : ''}
       </div>
@@ -211,7 +226,6 @@ function productRowHTML(p) {
         <div class="product-name">${p.name}</div>
         <div class="product-meta">${p.volume} л</div>
         <div class="product-price">${formatPrice(p.price)}</div>
-        <div class="product-minorder">мин. заказ — ${p.minOrder} шт.</div>
       </div>
       <div class="qty-holder">
         ${qty > 0 ? `
@@ -232,6 +246,11 @@ function attachProductHandlers(container, onChange) {
     card.querySelectorAll('[data-action]').forEach(btn => {
       btn.addEventListener('click', () => {
         const action = btn.dataset.action;
+        if (action === 'zoom') {
+          const p = productById(id);
+          if (p && p.image) openLightbox(p.image, p.name);
+          return;
+        }
         if (action === 'add' || action === 'plus') changeQty(id, +1);
         if (action === 'minus') changeQty(id, -1);
         if (onChange) {
@@ -322,6 +341,18 @@ function renderCheckout() {
       <span>${formatPrice(p.price * p.qty)}</span>
     </div>`).join('');
   document.getElementById('checkout-total').textContent = formatPrice(cartTotal());
+
+  // сбрасываем форму на «Физическое лицо» / «Доставка» при каждом новом входе
+  state.customerType = 'individual';
+  state.method = 'delivery';
+  document.getElementById('fields-individual').style.display = 'block';
+  document.getElementById('fields-company').style.display = 'none';
+  document.getElementById('field-address').style.display = 'block';
+  document.getElementById('f-address').required = true;
+  document.getElementById('field-company-delivery-address').style.display = 'block';
+  document.querySelectorAll('.segmented').forEach(group => {
+    group.querySelectorAll('.segmented-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+  });
 }
 
 // ---------- Обработчики: экран возраста ----------
@@ -377,36 +408,86 @@ document.getElementById('btn-continue-shopping').addEventListener('click', () =>
 
 document.querySelectorAll('.segmented-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.segmented-btn').forEach(b => b.classList.remove('active'));
+    const group = btn.closest('.segmented');
+    group.querySelectorAll('.segmented-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    state.method = btn.dataset.method;
-    const addressField = document.getElementById('field-address');
-    addressField.style.display = state.method === 'delivery' ? 'block' : 'none';
-    document.getElementById('f-address').required = state.method === 'delivery';
     haptic('select');
+
+    if (btn.dataset.customerType) {
+      state.customerType = btn.dataset.customerType;
+      const isCompany = state.customerType === 'company';
+      document.getElementById('fields-individual').style.display = isCompany ? 'none' : 'block';
+      document.getElementById('fields-company').style.display = isCompany ? 'block' : 'none';
+    }
+    if (btn.dataset.method) {
+      state.method = btn.dataset.method;
+      const addressField = document.getElementById('field-address');
+      addressField.style.display = state.method === 'delivery' ? 'block' : 'none';
+      document.getElementById('f-address').required = state.method === 'delivery';
+    }
+    if (btn.dataset.orgForm) {
+      state.orgForm = btn.dataset.orgForm;
+    }
   });
+});
+
+document.getElementById('f-same-address').addEventListener('change', (e) => {
+  document.getElementById('field-company-delivery-address').style.display = e.target.checked ? 'none' : 'block';
 });
 
 document.getElementById('checkout-form').addEventListener('submit', (e) => {
   e.preventDefault();
-  const name = document.getElementById('f-name').value.trim();
-  const phone = document.getElementById('f-phone').value.trim();
-  const address = document.getElementById('f-address').value.trim();
-  const comment = document.getElementById('f-comment').value.trim();
-  const agree = document.getElementById('f-agree').checked;
 
-  if (!name || !phone || (state.method === 'delivery' && !address) || !agree || !cartItems().length) {
-    haptic('error');
-    const msg = 'Пожалуйста, заполните обязательные поля (*) и подтвердите согласие с условиями.';
-    if (inTelegram && tg.showAlert) tg.showAlert(msg); else alert(msg);
-    return;
+  let customer;
+
+  if (state.customerType === 'company') {
+    const companyName = document.getElementById('f-company-name').value.trim();
+    const bin = document.getElementById('f-bin').value.trim();
+    const legalAddress = document.getElementById('f-legal-address').value.trim();
+    const sameAddress = document.getElementById('f-same-address').checked;
+    const companyAddress = document.getElementById('f-company-address').value.trim();
+    const phone = document.getElementById('f-company-phone').value.trim();
+    const comment = document.getElementById('f-company-comment').value.trim();
+    const agree = document.getElementById('f-agree').checked;
+    const deliveryAddress = sameAddress ? legalAddress : companyAddress;
+
+    if (!companyName || !bin || !legalAddress || !deliveryAddress || !phone || !agree || !cartItems().length) {
+      haptic('error');
+      const msg = 'Пожалуйста, заполните обязательные поля (*) и подтвердите согласие с условиями.';
+      if (inTelegram && tg.showAlert) tg.showAlert(msg); else alert(msg);
+      return;
+    }
+
+    customer = {
+      type: 'company',
+      orgForm: state.orgForm,
+      companyName, bin, legalAddress, deliveryAddress, phone, comment,
+    };
+  } else {
+    const name = document.getElementById('f-name').value.trim();
+    const phone = document.getElementById('f-phone').value.trim();
+    const address = document.getElementById('f-address').value.trim();
+    const comment = document.getElementById('f-comment').value.trim();
+    const agree = document.getElementById('f-agree').checked;
+
+    if (!name || !phone || (state.method === 'delivery' && !address) || !agree || !cartItems().length) {
+      haptic('error');
+      const msg = 'Пожалуйста, заполните обязательные поля (*) и подтвердите согласие с условиями.';
+      if (inTelegram && tg.showAlert) tg.showAlert(msg); else alert(msg);
+      return;
+    }
+
+    customer = {
+      type: 'individual',
+      name, phone, method: state.method, address: state.method === 'delivery' ? address : null, comment,
+    };
   }
 
   const order = {
     orderId: makeOrderId(),
     items: cartItems().map(p => ({ id: p.id, name: p.name, brand: p.brand, volume: p.volume, qty: p.qty, price: p.price })),
     total: cartTotal(),
-    customer: { name, phone, method: state.method, address: state.method === 'delivery' ? address : null, comment },
+    customer,
     createdAt: new Date().toISOString(),
   };
 

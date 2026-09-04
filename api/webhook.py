@@ -37,7 +37,7 @@ SHOP_BUTTON_TEXT = "🛍 Открыть витрину"
 # Mini App по точному URL и не подхватывают Cache-Control. Добавляем
 # версию в query — при каждом значимом деплое фронтенда меняйте эту
 # строку, чтобы /start выдавал заведомо "новый" адрес.
-BUILD_VERSION = "20260904d"
+BUILD_VERSION = "20260905a"
 
 
 def call_telegram(method, payload):
@@ -72,14 +72,25 @@ def send_message(chat_id, text, reply_markup=None):
 def format_order(order):
     lines = [f"🆕 Новый заказ №{order.get('orderId', '—')}", ""]
     customer = order.get("customer", {})
-    lines.append(f"👤 {customer.get('name', '—')}")
-    lines.append(f"📞 {customer.get('phone', '—')}")
-    method = "Доставка" if customer.get("method") == "delivery" else "Самовывоз"
-    lines.append(f"🚚 {method}")
-    if customer.get("address"):
-        lines.append(f"📍 {customer['address']}")
-    if customer.get("comment"):
-        lines.append(f"💬 {customer['comment']}")
+
+    if customer.get("type") == "company":
+        lines.append(f"🏢 {customer.get('orgForm', '—')} «{customer.get('companyName', '—')}»")
+        lines.append(f"🧾 ИИН/БИН: {customer.get('bin', '—')}")
+        lines.append(f"📞 {customer.get('phone', '—')}")
+        lines.append(f"📍 Юр. адрес: {customer.get('legalAddress', '—')}")
+        lines.append(f"🚚 Адрес доставки: {customer.get('deliveryAddress', '—')}")
+        if customer.get("comment"):
+            lines.append(f"💬 {customer['comment']}")
+    else:
+        lines.append(f"👤 {customer.get('name', '—')}")
+        lines.append(f"📞 {customer.get('phone', '—')}")
+        method = "Доставка" if customer.get("method") == "delivery" else "Самовывоз"
+        lines.append(f"🚚 {method}")
+        if customer.get("address"):
+            lines.append(f"📍 {customer['address']}")
+        if customer.get("comment"):
+            lines.append(f"💬 {customer['comment']}")
+
     lines.append("")
     lines.append("Состав заказа:")
     for item in order.get("items", []):
