@@ -20,6 +20,7 @@ Telegram шлёт сюда POST-запрос при каждом новом со
 import json
 import os
 import urllib.request
+import urllib.error
 import hmac
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler
@@ -43,10 +44,16 @@ def call_telegram(method, payload):
     )
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
-            return json.loads(resp.read().decode("utf-8"))
+            result = json.loads(resp.read().decode("utf-8"))
+            print(f"Telegram API {method}: ok={result.get('ok')}")
+            return result
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        print(f"Telegram API HTTPError ({method}): {e.code} {body}")
+        return {"ok": False, "error_code": e.code, "description": body}
     except Exception as e:
         print(f"Telegram API error ({method}): {e}")
-        return None
+        return {"ok": False, "description": str(e)}
 
 
 def send_message(chat_id, text, reply_markup=None):
@@ -81,69 +88,78 @@ def format_order(order):
 
 def handle_start(chat_id):
     if not MINI_APP_URL:
-        send_message(
+        r = send_message(
             chat_id,
             "Витрина ещё не подключена: не задан MINI_APP_URL в настройках сервера.",
         )
-        return
+        return {"handler": "start", "mini_app_url_missing": True, "send": r}
     reply_markup = {
         "keyboard": [[{"text": SHOP_BUTTON_TEXT, "web_app": {"url": MINI_APP_URL}}]],
         "resize_keyboard": True,
     }
-    send_message(
+    r = send_message(
         chat_id,
         "Добро пожаловать в FORCE TRADE SERVICE!\nНажмите кнопку ниже, чтобы открыть витрину.",
         reply_markup,
     )
+    return {"handler": "start", "send": r}
 
 
 def handle_id(chat_id):
-    send_message(
+    r = send_message(
         chat_id,
         f"ID этого чата: {chat_id}\n"
         f"Укажите его в переменной окружения ADMIN_CHAT_ID, чтобы сюда приходили заказы.",
     )
+    return {"handler": "id", "send": r}
 
 
 def handle_web_app_data(chat_id, raw_data, user_id):
     try:
         order = json.loads(raw_data)
-    except json.JSONDecodeError:
-        send_message(chat_id, "Не удалось обработать заказ. Попробуйте ещё раз.")
-        return
+    except json.JSONDecodeError as e:
+        r = send_message(chat_id, "Не удалось обработать заказ. Попробуйте ещё раз.")
+        return {"handler": "web_app_data", "json_error": str(e), "send": r}
 
     order.setdefault("receivedAt", datetime.now().isoformat(timespec="seconds"))
     text = format_order(order)
 
     target_chat = ADMIN_CHAT_ID or chat_id
-    call_telegram("sendMessage", {"chat_id": target_chat, "text": text})
+    admin_result = call_telegram("sendMessage", {"chat_id": target_chat, "text": text})
 
-    send_message(
+    confirm_result = send_message(
         chat_id,
         f"Спасибо! Заказ №{order.get('orderId', '')} принят. "
         f"Мы свяжемся с вами для подтверждения.",
         reply_markup={"remove_keyboard": True},
     )
     print(f"Заказ {order.get('orderId')} от user_id={user_id} обработан")
+    return {
+        "handler": "web_app_data",
+        "order_id": order.get("orderId"),
+        "admin_chat_used": target_chat,
+        "admin_send": admin_result,
+        "confirm_send": confirm_result,
+    }
 
 
 def process_update(update):
     message = update.get("message")
     if not message:
-        return
+        return {"handler": "none", "reason": "no message in update"}
 
     chat_id = message["chat"]["id"]
     user_id = message.get("from", {}).get("id")
 
     if "web_app_data" in message:
-        handle_web_app_data(chat_id, message["web_app_data"]["data"], user_id)
-        return
+        return handle_web_app_data(chat_id, message["web_app_data"]["data"], user_id)
 
     text = message.get("text", "")
     if text == "/start":
-        handle_start(chat_id)
+        return handle_start(chat_id)
     elif text == "/id":
-        handle_id(chat_id)
+        return handle_id(chat_id)
+    return {"handler": "none", "reason": f"unhandled text: {text!r}"}
 
 
 class handler(BaseHTTPRequestHandler):
@@ -164,17 +180,21 @@ class handler(BaseHTTPRequestHandler):
         except json.JSONDecodeError:
             update = {}
 
+        result = None
+        error = None
         try:
             if BOT_TOKEN:
-                process_update(update)
+                result = process_update(update)
         except Exception as e:
+            error = str(e)
             print(f"Ошибка обработки update: {e}")
 
-        # Telegram нужен только код 200 — тело не важно
+        # Telegram нужен только код 200 — тело не важно, но мы кладём туда
+        # диагностику, чтобы можно было проверить обработку прямым curl-ом.
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
-        self.wfile.write(b'{"ok":true}')
+        self.wfile.write(json.dumps({"ok": True, "result": result, "error": error}).encode("utf-8"))
 
     def do_GET(self):
         # Для ручной проверки, что функция вообще жива

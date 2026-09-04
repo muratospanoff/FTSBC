@@ -408,16 +408,26 @@ document.getElementById('checkout-form').addEventListener('submit', (e) => {
 
   document.getElementById('success-order-id').textContent = order.orderId;
   haptic('success');
+
+  // Отправляем заказ СРАЗУ по факту оформления, не дожидаясь отдельного тапа
+  // по «Закрыть» — sendData() всё равно закрывает Mini App сам, а полагаться
+  // на то, что покупатель не свайпнёт/не закроет приложение иначе, нельзя:
+  // так заказ рискует не долететь до бота вообще.
+  if (inTelegram && tg.sendData) {
+    try {
+      state.cart = {};
+      saveCart();
+      tg.sendData(JSON.stringify(order));
+      return; // sendData сам закрывает Mini App внутри Telegram
+    } catch (err) {
+      // метод недоступен (например, запуск не через reply-кнопку) — просто
+      // показываем экран подтверждения ниже, как в браузере
+    }
+  }
+
   stack.length = 0;
   showScreen('screen-success', { push: false });
-
   document.getElementById('btn-success-close').onclick = () => {
-    if (inTelegram && tg.sendData) {
-      try {
-        tg.sendData(JSON.stringify(order));
-        return; // sendData сам закрывает Mini App внутри Telegram
-      } catch (err) { /* метод недоступен вне reply-кнопки — просто закрываем локально */ }
-    }
     state.cart = {};
     saveCart();
     stack.length = 0;
