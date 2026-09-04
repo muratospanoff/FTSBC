@@ -115,17 +115,23 @@ def handle_id(chat_id):
 
 
 def handle_web_app_data(chat_id, raw_data, user_id):
+    print(f"web_app_data raw: {len(raw_data)} bytes, preview={raw_data[:200]!r}")
+
     try:
         order = json.loads(raw_data)
     except json.JSONDecodeError as e:
+        print(f"JSON parse FAILED: {e}")
         r = send_message(chat_id, "Не удалось обработать заказ. Попробуйте ещё раз.")
         return {"handler": "web_app_data", "json_error": str(e), "send": r}
 
     order.setdefault("receivedAt", datetime.now().isoformat(timespec="seconds"))
     text = format_order(order)
+    print(f"formatted admin text: {len(text)} chars")
 
     target_chat = ADMIN_CHAT_ID or chat_id
+    print(f"sending admin message to target_chat={target_chat!r} (ADMIN_CHAT_ID env={ADMIN_CHAT_ID!r})")
     admin_result = call_telegram("sendMessage", {"chat_id": target_chat, "text": text})
+    print(f"admin_result={admin_result}")
 
     confirm_result = send_message(
         chat_id,
@@ -144,10 +150,12 @@ def handle_web_app_data(chat_id, raw_data, user_id):
 
 
 def process_update(update):
+    print(f"incoming update keys: {list(update.keys())}")
     message = update.get("message")
     if not message:
         return {"handler": "none", "reason": "no message in update"}
 
+    print(f"message keys: {list(message.keys())}")
     chat_id = message["chat"]["id"]
     user_id = message.get("from", {}).get("id")
 
