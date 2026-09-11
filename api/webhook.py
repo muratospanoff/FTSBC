@@ -96,7 +96,7 @@ PHONE_BUTTON_TEXT = "📱 Отправить мой номер телефона"
 # Mini App по точному URL и не подхватывают Cache-Control. Добавляем
 # версию в query — при каждом значимом деплое фронтенда меняйте эту
 # строку, чтобы /start выдавал заведомо "новый" адрес.
-BUILD_VERSION = "20260905b"
+BUILD_VERSION = "20260905c"
 
 
 def call_telegram(method, payload):
@@ -171,11 +171,33 @@ def send_phone_request(chat_id):
     return send_message(
         chat_id,
         "Здравствуйте! Доступ к витрине FORCE TRADE SERVICE открыт только "
-        "зарегистрированным ИП и ТОО, достигшим 21 года.\n\n"
+        "зарегистрированным ИП, ТОО, и лицам достигшим 21 года.\n\n"
         "Пожалуйста, поделитесь номером телефона при помощи кнопки снизу, "
         "чтобы продолжить.",
         reply_markup,
     )
+
+
+def docs_url(page):
+    sep = "&" if "?" in MINI_APP_URL else "?"
+    return f"{MINI_APP_URL}/{page}{sep}v={BUILD_VERSION}"
+
+
+def shop_keyboard(user_id):
+    # Reply-keyboard, а не inline: только через неё Mini App получает
+    # доступ к Telegram.WebApp.sendData(). Оферта/политика — тоже
+    # web_app-кнопки (обычная url-кнопка в reply-keyboard недоступна),
+    # но ведут на простые информационные страницы, без uid/sig.
+    return {
+        "keyboard": [
+            [{"text": SHOP_BUTTON_TEXT, "web_app": {"url": shop_button_url(user_id)}}],
+            [
+                {"text": "📄 Оферта", "web_app": {"url": docs_url("offer.html")}},
+                {"text": "🔒 Политика конфиденциальности", "web_app": {"url": docs_url("privacy.html")}},
+            ],
+        ],
+        "resize_keyboard": True,
+    }
 
 
 def handle_start(chat_id, user_id):
@@ -191,14 +213,10 @@ def handle_start(chat_id, user_id):
         )
         return {"handler": "start", "mini_app_url_missing": True, "send": r}
 
-    reply_markup = {
-        "keyboard": [[{"text": SHOP_BUTTON_TEXT, "web_app": {"url": shop_button_url(user_id)}}]],
-        "resize_keyboard": True,
-    }
     r = send_message(
         chat_id,
         "Добро пожаловать в FORCE TRADE SERVICE!\nНажмите кнопку ниже, чтобы открыть витрину.",
-        reply_markup,
+        shop_keyboard(user_id),
     )
     return {"handler": "start", "send": r}
 
@@ -225,15 +243,11 @@ def handle_contact(message):
         r = send_message(chat_id, "Спасибо! Витрина скоро будет подключена.")
         return {"handler": "contact", "saved": saved, "send": r}
 
-    reply_markup = {
-        "keyboard": [[{"text": SHOP_BUTTON_TEXT, "web_app": {"url": shop_button_url(user_id)}}]],
-        "resize_keyboard": True,
-    }
     r = send_message(
         chat_id,
         "Спасибо! Теперь нажмите кнопку ниже, чтобы открыть витрину и "
         "завершить регистрацию организации.",
-        reply_markup,
+        shop_keyboard(user_id),
     )
     return {"handler": "contact", "saved": saved, "send": r}
 

@@ -397,6 +397,11 @@ function iinAge(iin) {
   const hadBirthday = today.getMonth() > birth.getMonth() ||
     (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate());
   if (!hadBirthday) age -= 1;
+  // Защита от «правдоподобно посчитавшегося», но бессмысленного возраста —
+  // например, если реальный 7-й символ ИИН не совпал с ожидаемым и дата
+  // ушла в 1800-е: тогда age получался огромным и ошибочно проходил
+  // проверку "не младше 21". Такое считаем невалидным, а не взрослым.
+  if (age < 0 || age > 100) return { ok: false, reason: 'implausible' };
   return { ok: true, age };
 }
 
@@ -448,7 +453,7 @@ document.getElementById('btn-age-no').addEventListener('click', () => {
 ['link-offer', 'link-privacy'].forEach(id => {
   document.getElementById(id).addEventListener('click', (e) => {
     e.preventDefault();
-    const url = 'https://example.com/' + (id === 'link-offer' ? 'offer' : 'privacy');
+    const url = window.location.origin + '/' + (id === 'link-offer' ? 'offer.html' : 'privacy.html');
     if (inTelegram && tg.openLink) tg.openLink(url); else window.open(url, '_blank');
   });
 });
