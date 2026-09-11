@@ -9,15 +9,38 @@ const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : 
 // platform (вне Telegram SDK-заглушка отдаёт 'unknown').
 const inTelegram = !!(tg && tg.platform && tg.platform !== 'unknown');
 
+// ---------- Регистрация организации (закрытый доступ) ----------
+
+const urlParams = new URLSearchParams(window.location.search);
+const UID = urlParams.get('uid') || '';
+const SIG = urlParams.get('sig') || '';
+
+let PROFILE = null; // { orgForm, companyName, bin, legalAddress, deliveryAddress }, из /api/profile
+
+async function fetchProfile() {
+  const res = await fetch(`/api/profile?uid=${encodeURIComponent(UID)}&sig=${encodeURIComponent(SIG)}`);
+  const data = await res.json();
+  if (data.registered) PROFILE = { ...data.profile, phone: data.phone };
+  return data;
+}
+
+async function saveProfile(profile) {
+  const res = await fetch('/api/profile', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ uid: UID, sig: SIG, ...profile }),
+  });
+  return res.json();
+}
+
 // ---------- Состояние приложения ----------
 
 const state = {
   cart: loadCart(),          // { productId: qty }
   category: null,
   country: null,
-  method: 'delivery',
-  customerType: 'individual', // 'individual' | 'company'
-  orgForm: 'ИП',               // 'ИП' | 'ТОО'
+  regOrgForm: 'ИП',           // выбор в форме регистрации: 'ИП' | 'ТОО'
+  buyerType: 'company',       // на финальном шаге: 'company' | 'self'
 };
 
 const stack = [];            // стек экранов для кнопки "Назад"
@@ -342,26 +365,77 @@ function renderCheckout() {
     </div>`).join('');
   document.getElementById('checkout-total').textContent = formatPrice(cartTotal());
 
-  // сбрасываем форму на «Физическое лицо» / «Доставка» при каждом новом входе
-  state.customerType = 'individual';
-  state.method = 'delivery';
-  document.getElementById('fields-individual').style.display = 'block';
-  document.getElementById('fields-company').style.display = 'none';
-  document.getElementById('field-address').style.display = 'block';
-  document.getElementById('f-address').required = true;
-  document.getElementById('field-company-delivery-address').style.display = 'block';
-  document.querySelectorAll('.segmented').forEach(group => {
-    group.querySelectorAll('.segmented-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
-  });
+  const p = PROFILE || {};
+  document.getElementById('profile-summary-body').innerHTML = `
+    <div class="checkout-item-row"><span>${p.orgForm || ''} «${p.companyName || '—'}»</span><span></span></div>
+    <div class="checkout-item-row"><span>БИН</span><span>${p.bin || '—'}</span></div>
+    <div class="checkout-item-row"><span>Телефон</span><span>${p.phone || '—'}</span></div>
+    <div class="checkout-item-row"><span>Адрес доставки</span><span>${p.deliveryAddress || '—'}</span></div>`;
+  document.querySelector('[data-buyer-type="company"]').textContent = `Для ${p.companyName || 'компании'}`;
+
+  // сбрасываем форму на «Для компании» при каждом новом входе
+  state.buyerType = 'company';
+  document.getElementById('field-self-iin').style.display = 'none';
+  document.getElementById('f-self-iin').value = '';
+  document.querySelectorAll('[data-buyer-type]').forEach((b, i) => b.classList.toggle('active', i === 0));
+}
+
+// Возвращает {ok, age} по ИИН РК: первые 6 цифр — ГГММДД, 7-я — век/пол.
+function iinAge(iin) {
+  if (!/^\d{12}$/.test(iin)) return { ok: false, reason: 'format' };
+  const centuryBase = { '1': 1800, '2': 1800, '3': 1900, '4': 1900, '5': 2000, '6': 2000 }[iin[6]];
+  if (!centuryBase) return { ok: false, reason: 'century' };
+  const year = centuryBase + parseInt(iin.slice(0, 2), 10);
+  const month = parseInt(iin.slice(2, 4), 10);
+  const day = parseInt(iin.slice(4, 6), 10);
+  const birth = new Date(year, month - 1, day);
+  if (birth.getFullYear() !== year || birth.getMonth() !== month - 1 || birth.getDate() !== day) {
+    return { ok: false, reason: 'date' };
+  }
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const hadBirthday = today.getMonth() > birth.getMonth() ||
+    (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate());
+  if (!hadBirthday) age -= 1;
+  return { ok: true, age };
 }
 
 // ---------- Обработчики: экран возраста ----------
 
-document.getElementById('btn-age-yes').addEventListener('click', () => {
+document.getElementById('btn-age-yes').addEventListener('click', async () => {
   haptic('success');
-  renderCategories();
+
+  if (!UID || !SIG) {
+    stack.length = 0;
+    showScreen('screen-noauth', { push: false });
+    return;
+  }
+
+  const btn = document.getElementById('btn-age-yes');
+  const originalText = btn.textContent;
+  btn.textContent = 'Проверяем регистрацию…';
+  btn.disabled = true;
+
+  let data;
+  try {
+    data = await fetchProfile();
+  } catch (err) {
+    btn.textContent = originalText;
+    btn.disabled = false;
+    const msg = 'Не удалось связаться с сервером. Проверьте интернет и попробуйте ещё раз.';
+    if (inTelegram && tg.showAlert) tg.showAlert(msg); else alert(msg);
+    return;
+  }
+  btn.textContent = originalText;
+  btn.disabled = false;
+
   stack.length = 0;
-  showScreen('screen-categories', { push: false });
+  if (data.registered) {
+    renderCategories();
+    showScreen('screen-categories', { push: false });
+  } else {
+    showScreen('screen-registration', { push: false });
+  }
 });
 
 document.getElementById('btn-age-no').addEventListener('click', () => {
@@ -377,6 +451,64 @@ document.getElementById('btn-age-no').addEventListener('click', () => {
     const url = 'https://example.com/' + (id === 'link-offer' ? 'offer' : 'privacy');
     if (inTelegram && tg.openLink) tg.openLink(url); else window.open(url, '_blank');
   });
+});
+
+// ---------- Обработчики: регистрация организации ----------
+
+document.querySelectorAll('[data-reg-org-form]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.parentElement.querySelectorAll('.segmented-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.regOrgForm = btn.dataset.regOrgForm;
+    haptic('select');
+  });
+});
+
+document.getElementById('reg-same-address').addEventListener('change', (e) => {
+  document.getElementById('reg-field-delivery-address').style.display = e.target.checked ? 'none' : 'block';
+});
+
+document.getElementById('registration-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const companyName = document.getElementById('reg-company-name').value.trim();
+  const bin = document.getElementById('reg-bin').value.trim();
+  const legalAddress = document.getElementById('reg-legal-address').value.trim();
+  const sameAddress = document.getElementById('reg-same-address').checked;
+  const deliveryAddress = sameAddress ? legalAddress : document.getElementById('reg-delivery-address').value.trim();
+
+  if (!companyName || !/^\d{12}$/.test(bin) || !legalAddress || !deliveryAddress) {
+    haptic('error');
+    const msg = 'Заполните все поля (*). БИН — ровно 12 цифр.';
+    if (inTelegram && tg.showAlert) tg.showAlert(msg); else alert(msg);
+    return;
+  }
+
+  const btn = document.getElementById('btn-registration-submit');
+  btn.disabled = true;
+  btn.textContent = 'Сохраняем…';
+
+  let result;
+  try {
+    result = await saveProfile({ orgForm: state.regOrgForm, companyName, bin, legalAddress, deliveryAddress });
+  } catch (err) {
+    result = { ok: false };
+  }
+  btn.disabled = false;
+  btn.textContent = 'Продолжить';
+
+  if (!result.ok) {
+    haptic('error');
+    const msg = 'Не удалось сохранить регистрацию. Проверьте интернет и попробуйте ещё раз.';
+    if (inTelegram && tg.showAlert) tg.showAlert(msg); else alert(msg);
+    return;
+  }
+
+  PROFILE = { ...result.profile, phone: result.phone };
+  haptic('success');
+  stack.length = 0;
+  renderCategories();
+  showScreen('screen-categories', { push: false });
 });
 
 // ---------- Обработчики: навигация назад (браузер без Telegram) ----------
@@ -406,82 +538,53 @@ document.getElementById('btn-continue-shopping').addEventListener('click', () =>
 
 // ---------- Обработчики: оформление заказа ----------
 
-document.querySelectorAll('.segmented-btn').forEach(btn => {
+document.querySelectorAll('[data-buyer-type]').forEach(btn => {
   btn.addEventListener('click', () => {
-    const group = btn.closest('.segmented');
-    group.querySelectorAll('.segmented-btn').forEach(b => b.classList.remove('active'));
+    btn.parentElement.querySelectorAll('.segmented-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    state.buyerType = btn.dataset.buyerType;
+    document.getElementById('field-self-iin').style.display = state.buyerType === 'self' ? 'block' : 'none';
     haptic('select');
-
-    if (btn.dataset.customerType) {
-      state.customerType = btn.dataset.customerType;
-      const isCompany = state.customerType === 'company';
-      document.getElementById('fields-individual').style.display = isCompany ? 'none' : 'block';
-      document.getElementById('fields-company').style.display = isCompany ? 'block' : 'none';
-    }
-    if (btn.dataset.method) {
-      state.method = btn.dataset.method;
-      const addressField = document.getElementById('field-address');
-      addressField.style.display = state.method === 'delivery' ? 'block' : 'none';
-      document.getElementById('f-address').required = state.method === 'delivery';
-    }
-    if (btn.dataset.orgForm) {
-      state.orgForm = btn.dataset.orgForm;
-    }
   });
-});
-
-document.getElementById('f-same-address').addEventListener('change', (e) => {
-  document.getElementById('field-company-delivery-address').style.display = e.target.checked ? 'none' : 'block';
 });
 
 document.getElementById('checkout-form').addEventListener('submit', (e) => {
   e.preventDefault();
 
-  let customer;
+  const comment = document.getElementById('f-comment').value.trim();
+  const agree = document.getElementById('f-agree').checked;
+  const p = PROFILE || {};
 
-  if (state.customerType === 'company') {
-    const companyName = document.getElementById('f-company-name').value.trim();
-    const bin = document.getElementById('f-bin').value.trim();
-    const legalAddress = document.getElementById('f-legal-address').value.trim();
-    const sameAddress = document.getElementById('f-same-address').checked;
-    const companyAddress = document.getElementById('f-company-address').value.trim();
-    const phone = document.getElementById('f-company-phone').value.trim();
-    const comment = document.getElementById('f-company-comment').value.trim();
-    const agree = document.getElementById('f-agree').checked;
-    const deliveryAddress = sameAddress ? legalAddress : companyAddress;
-
-    if (!companyName || !bin || !legalAddress || !deliveryAddress || !phone || !agree || !cartItems().length) {
-      haptic('error');
-      const msg = 'Пожалуйста, заполните обязательные поля (*) и подтвердите согласие с условиями.';
-      if (inTelegram && tg.showAlert) tg.showAlert(msg); else alert(msg);
-      return;
-    }
-
-    customer = {
-      type: 'company',
-      orgForm: state.orgForm,
-      companyName, bin, legalAddress, deliveryAddress, phone, comment,
-    };
-  } else {
-    const name = document.getElementById('f-name').value.trim();
-    const phone = document.getElementById('f-phone').value.trim();
-    const address = document.getElementById('f-address').value.trim();
-    const comment = document.getElementById('f-comment').value.trim();
-    const agree = document.getElementById('f-agree').checked;
-
-    if (!name || !phone || (state.method === 'delivery' && !address) || !agree || !cartItems().length) {
-      haptic('error');
-      const msg = 'Пожалуйста, заполните обязательные поля (*) и подтвердите согласие с условиями.';
-      if (inTelegram && tg.showAlert) tg.showAlert(msg); else alert(msg);
-      return;
-    }
-
-    customer = {
-      type: 'individual',
-      name, phone, method: state.method, address: state.method === 'delivery' ? address : null, comment,
-    };
+  if (!agree || !cartItems().length) {
+    haptic('error');
+    const msg = 'Подтвердите согласие с условиями — корзина не может быть пустой.';
+    if (inTelegram && tg.showAlert) tg.showAlert(msg); else alert(msg);
+    return;
   }
+
+  let selfIin = null;
+  if (state.buyerType === 'self') {
+    selfIin = document.getElementById('f-self-iin').value.trim();
+    const check = iinAge(selfIin);
+    if (!check.ok) {
+      haptic('error');
+      const msg = 'ИИН указан неверно. Проверьте, что введено 12 цифр.';
+      if (inTelegram && tg.showAlert) tg.showAlert(msg); else alert(msg);
+      return;
+    }
+    if (check.age < 21) {
+      haptic('error');
+      const msg = 'Покупка алкогольной продукции недоступна лицам младше 21 года.';
+      if (inTelegram && tg.showAlert) tg.showAlert(msg); else alert(msg);
+      return;
+    }
+  }
+
+  const customer = {
+    orgForm: p.orgForm, companyName: p.companyName, bin: p.bin,
+    legalAddress: p.legalAddress, deliveryAddress: p.deliveryAddress, phone: p.phone,
+    buyerType: state.buyerType, selfIin, comment,
+  };
 
   const order = {
     orderId: makeOrderId(),
