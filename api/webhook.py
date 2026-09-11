@@ -28,20 +28,65 @@ Telegram шлёт сюда POST-запрос при каждом новом со
     их добавляет сам Vercel при подключении Storage → Upstash Redis.
 """
 
+import hashlib
 import json
 import os
 import urllib.request
 import urllib.error
+import urllib.parse
 import hmac
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler
-
-from _common import kv_get, kv_set, sign_uid, kv_configured
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 ADMIN_CHAT_ID = os.environ.get("ADMIN_CHAT_ID", "")
 MINI_APP_URL = os.environ.get("MINI_APP_URL", "")
 WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "")
+
+# ---------- KV (Upstash/Vercel) + подпись ссылок — продублировано в
+# api/profile.py, т.к. Vercel Python runtime не всегда подхватывает общий
+# модуль между отдельными serverless-функциями. ----------
+
+KV_URL = os.environ.get("KV_REST_API_URL") or os.environ.get("UPSTASH_REDIS_REST_URL") or ""
+KV_TOKEN = os.environ.get("KV_REST_API_TOKEN") or os.environ.get("UPSTASH_REDIS_REST_TOKEN") or ""
+
+
+def kv_configured():
+    return bool(KV_URL and KV_TOKEN)
+
+
+def _kv_request(path):
+    req = urllib.request.Request(f"{KV_URL}{path}", headers={"Authorization": f"Bearer {KV_TOKEN}"})
+    try:
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        print(f"KV HTTPError: {e.code} {e.read().decode('utf-8', errors='replace')}")
+        return {"error": True}
+    except Exception as e:
+        print(f"KV error: {e}")
+        return {"error": True}
+
+
+def kv_get(key):
+    if not kv_configured():
+        return None
+    result = _kv_request(f"/get/{urllib.parse.quote(key, safe='')}")
+    return result.get("result") if isinstance(result, dict) else None
+
+
+def kv_set(key, value):
+    if not kv_configured():
+        return False
+    if not isinstance(value, str):
+        value = json.dumps(value, ensure_ascii=False)
+    result = _kv_request(f"/set/{urllib.parse.quote(key, safe='')}/{urllib.parse.quote(value, safe='')}")
+    return isinstance(result, dict) and result.get("result") == "OK"
+
+
+def sign_uid(user_id):
+    msg = str(user_id).encode("utf-8")
+    return hmac.new(WEBHOOK_SECRET.encode("utf-8"), msg, hashlib.sha256).hexdigest()[:20]
 
 API_BASE = f"https://api.telegram.org/bot{BOT_TOKEN}"
 SHOP_BUTTON_TEXT = "🛍 Открыть витрину"
