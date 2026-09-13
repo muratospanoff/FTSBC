@@ -96,9 +96,9 @@ def main():
     js = "// Автоматически сгенерировано из прайс-листа. Обновляйте при изменении ассортимента.\n"
     js += "const PRODUCTS = " + json.dumps(items, ensure_ascii=False, indent=2) + ";\n\n"
     js += """const CATEGORY_META = {
-  'Вино':   { icon: '🍷', title: 'Вино', image: 'images/1.jpg' },
-  'Виски':  { icon: '🥃', title: 'Виски', image: 'images/61.jpg' },
-  'Водка':  { icon: '🍾', title: 'Водка', image: 'images/82.jpg' }
+  'Вино':   { icon: '🍷', title: 'Вино', image: 'images/category-wine.jpg' },
+  'Виски':  { icon: '🥃', title: 'Виски', image: 'images/category-whisky.jpg' },
+  'Водка':  { icon: '🍾', title: 'Водка', image: 'images/category-vodka.jpg' }
 };
 
 const COUNTRY_META = {
