@@ -949,9 +949,9 @@ const PRODUCTS = [
 ];
 
 const CATEGORY_META = {
-  'Вино':   { icon: '🍷', title: 'Вино', image: 'images/category-wine.jpg' },
-  'Виски':  { icon: '🥃', title: 'Виски', image: 'images/category-whisky.jpg' },
-  'Водка':  { icon: '🍾', title: 'Водка', image: 'images/category-vodka.jpg' }
+  'Вино':   { icon: '🍷', title: 'Вино', image: 'images/category-wine-v2.jpg' },
+  'Виски':  { icon: '🥃', title: 'Виски', image: 'images/category-whisky-v2.jpg' },
+  'Водка':  { icon: '🍾', title: 'Водка', image: 'images/category-vodka-v2.jpg' }
 };
 
 const COUNTRY_META = {
