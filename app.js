@@ -450,10 +450,11 @@ document.getElementById('btn-age-no').addEventListener('click', () => {
   setTimeout(() => { if (inTelegram) { try { tg.close(); } catch (e) {} } }, 2500);
 });
 
-['link-offer', 'link-privacy'].forEach(id => {
-  document.getElementById(id).addEventListener('click', (e) => {
+document.querySelectorAll('[data-doc-link]').forEach(el => {
+  el.addEventListener('click', (e) => {
     e.preventDefault();
-    const url = window.location.origin + '/' + (id === 'link-offer' ? 'offer.html' : 'privacy.html');
+    const page = el.dataset.docLink === 'offer' ? 'offer.html' : 'privacy.html';
+    const url = window.location.origin + '/' + page;
     if (inTelegram && tg.openLink) tg.openLink(url); else window.open(url, '_blank');
   });
 });
@@ -477,14 +478,22 @@ document.getElementById('registration-form').addEventListener('submit', async (e
   e.preventDefault();
 
   const companyName = document.getElementById('reg-company-name').value.trim();
-  const bin = document.getElementById('reg-bin').value.trim();
+  // Отбрасываем всё, кроме цифр — на случай, если БИН вставлен/введён с
+  // пробелами или дефисами (частая ситуация при копировании из документов).
+  const bin = document.getElementById('reg-bin').value.replace(/\D/g, '');
   const legalAddress = document.getElementById('reg-legal-address').value.trim();
   const sameAddress = document.getElementById('reg-same-address').checked;
   const deliveryAddress = sameAddress ? legalAddress : document.getElementById('reg-delivery-address').value.trim();
 
-  if (!companyName || !/^\d{12}$/.test(bin) || !legalAddress || !deliveryAddress) {
+  const missing = [];
+  if (!companyName) missing.push('наименование компании');
+  if (!/^\d{12}$/.test(bin)) missing.push('БИН (ровно 12 цифр)');
+  if (!legalAddress) missing.push('юридический адрес');
+  if (!deliveryAddress) missing.push('адрес доставки');
+
+  if (missing.length) {
     haptic('error');
-    const msg = 'Заполните все поля (*). БИН — ровно 12 цифр.';
+    const msg = 'Проверьте поля: ' + missing.join(', ') + '.';
     if (inTelegram && tg.showAlert) tg.showAlert(msg); else alert(msg);
     return;
   }
@@ -569,7 +578,7 @@ document.getElementById('checkout-form').addEventListener('submit', (e) => {
 
   let selfIin = null;
   if (state.buyerType === 'self') {
-    selfIin = document.getElementById('f-self-iin').value.trim();
+    selfIin = document.getElementById('f-self-iin').value.replace(/\D/g, '');
     const check = iinAge(selfIin);
     if (!check.ok) {
       haptic('error');

@@ -129,6 +129,7 @@ html, body {
   margin-bottom: 18px;
 }
 .age-emoji { font-size: 54px; margin-bottom: 12px; }
+.age-icon { margin-bottom: 12px; }
 .age-text {
   font-size: 14.5px;
   line-height: 1.55;
@@ -137,8 +138,10 @@ html, body {
   margin: 0 0 14px;
 }
 .age-text--strong { font-weight: 700; }
+.age-text--kz { color: var(--hint); font-style: italic; margin-top: -8px; }
 .age-text a { color: var(--link); text-decoration: underline; }
 .age-actions { margin-top: 24px; display: flex; flex-direction: column; gap: 10px; }
+.btn-kz { display: block; font-size: 12px; font-weight: 500; font-style: italic; opacity: .8; margin-top: 2px; }
 
 /* ---------- Карточки категорий/стран ---------- */
 

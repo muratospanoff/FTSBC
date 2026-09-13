@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>FORCE TRADE SERVICE</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<link rel="stylesheet" href="style.css?v=20260905c">
+<link rel="stylesheet" href="style.css?v=20260913a">
 </head>
 <body>
 
@@ -15,23 +15,40 @@
   <section id="screen-age" class="screen active">
     <div class="age-wrap">
       <div class="age-logo">FORCE TRADE SERVICE</div>
-      <div class="age-emoji">🔞</div>
+      <svg class="age-icon" viewBox="0 0 64 64" width="56" height="56" aria-hidden="true">
+        <circle cx="32" cy="32" r="30" fill="#e6332f"/>
+        <text x="32" y="41" text-anchor="middle" font-size="24" font-weight="700" fill="#fff" font-family="Arial, Helvetica, sans-serif">21</text>
+        <line x1="9" y1="55" x2="55" y2="9" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+      </svg>
       <p class="age-text">
         Электронная витрина магазина алкогольных напитков содержит информацию, не рекомендованную
         для лиц, младше 21 года. Сведения, размещённые на канале, не являются рекламой, носят
         исключительно информационный характер и предназначены только для личного использования.
       </p>
+      <p class="age-text age-text--kz">
+        Алкоголь өнімдерін сататын электрондық дүкен 21 жасқа толмаған тұлғаларға ұсынылмайтын
+        ақпаратты қамтиды. Арнада орналастырылған мәліметтер жарнама болып табылмайды, тек
+        ақпараттық сипатта болып, жеке пайдалануға ғана арналған.
+      </p>
       <p class="age-text age-text--strong">
         Мы категорически против употребления алкоголя несовершеннолетними.
       </p>
+      <p class="age-text age-text--strong age-text--kz">
+        Біз кәмелетке толмағандардың алкоголь ішуіне қарсы шығамыз.
+      </p>
       <p class="age-text">
         Подтверждая свой возраст и продолжая просмотр канала, вы принимаете
-        <a href="#" id="link-offer">оферту</a> и
-        <a href="#" id="link-privacy">политику конфиденциальности</a>.
+        <a href="#" data-doc-link="offer">оферту</a> и
+        <a href="#" data-doc-link="privacy">политику конфиденциальности</a>.
+      </p>
+      <p class="age-text age-text--kz">
+        Жасыңызды растай отырып және арнаны қарауды жалғастыра отырып, сіз
+        <a href="#" data-doc-link="offer">оферта</a> мен
+        <a href="#" data-doc-link="privacy">құпиялылық саясатын</a> қабылдайсыз.
       </p>
       <div class="age-actions">
-        <button class="btn btn-primary" id="btn-age-yes">Подтверждаю, мне есть 21</button>
-        <button class="btn btn-ghost" id="btn-age-no">Мне нет 21 года</button>
+        <button class="btn btn-primary" id="btn-age-yes">Подтверждаю, мне есть 21<span class="btn-kz">Растаймын, маған 21 жас толды</span></button>
+        <button class="btn btn-ghost" id="btn-age-no">Мне нет 21 года<span class="btn-kz">Маған 21 жас толған жоқ</span></button>
       </div>
     </div>
   </section>
@@ -221,7 +238,7 @@
 
 </div>
 
-<script src="data.js?v=20260905c"></script>
-<script src="app.js?v=20260905c"></script>
+<script src="data.js?v=20260913a"></script>
+<script src="app.js?v=20260913a"></script>
 </body>
 </html>
