@@ -1,5 +1,14 @@
 /* FORCE TRADE SERVICE — Telegram Mini App витрины алкогольного магазина */
 
+// ---------- Временный фильтр брендов (пока не пришла новая поставка) ----------
+// Показываем только эти бренды; остальные скрыты из каталога (но остаются в
+// data.js, ничего не удаляется) — уберите/расширьте список, когда товар
+// снова появится на складе.
+const VISIBLE_BRANDS = new Set([
+  'KARTULI MARANI', 'TRALCIO', 'CASA DEFRA', 'FRESCHELLO', 'LAFAGE', 'BEAUVIGNAC', 'KINAHANS',
+]);
+PRODUCTS.splice(0, PRODUCTS.length, ...PRODUCTS.filter(p => VISIBLE_BRANDS.has((p.brand || '').toUpperCase())));
+
 const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 // ВАЖНО: initData НЕ передаётся Telegram, если Mini App запущен через
 // reply-keyboard кнопку (а не Menu Button) — это официальное поведение,
