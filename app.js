@@ -7,7 +7,15 @@
 const VISIBLE_BRANDS = new Set([
   'KARTULI MARANI', 'TRALCIO', 'CASA DEFRA', 'FRESCHELLO', 'LAFAGE', 'BEAUVIGNAC', 'KINAHANS',
 ]);
-PRODUCTS.splice(0, PRODUCTS.length, ...PRODUCTS.filter(p => VISIBLE_BRANDS.has((p.brand || '').toUpperCase())));
+// Внутри Kinahans пока в наличии только LL и LL GB — остальные позиции
+// бренда (Small Batch, Special Release и т.д.) скрыты тем же способом.
+const KINAHANS_VISIBLE_NAME = /(^|\s)LL(\s+GB)?$/i;
+PRODUCTS.splice(0, PRODUCTS.length, ...PRODUCTS.filter(p => {
+  const brand = (p.brand || '').toUpperCase();
+  if (!VISIBLE_BRANDS.has(brand)) return false;
+  if (brand === 'KINAHANS') return KINAHANS_VISIBLE_NAME.test((p.name || '').trim());
+  return true;
+}));
 
 const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 // ВАЖНО: initData НЕ передаётся Telegram, если Mini App запущен через
