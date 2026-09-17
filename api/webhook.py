@@ -25,6 +25,11 @@ Telegram шлёт сюда POST-запрос при каждом новом со
                       несколько через запятую, чтобы заказы получали
                       сразу несколько человек, например:
                       "111111111,6994024445"
+  ADMIN_CHAT_ID_EXTRA — необязательная доп. переменная: chat_id (тоже можно
+                      несколько через запятую) нового админа, которого
+                      добавляете позже, — не трогая ADMIN_CHAT_ID (если он
+                      сохранён как Secret, его значение нельзя посмотреть,
+                      поэтому проще завести отдельную переменную).
   MINI_APP_URL     — https-адрес витрины (обычно = адрес этого же деплоя)
   WEBHOOK_SECRET   — секрет для проверки заголовка X-Telegram-Bot-Api-Secret-Token
   + переменные хранилища (KV_REST_API_URL/TOKEN или UPSTASH_REDIS_REST_URL/TOKEN),
@@ -43,9 +48,15 @@ from http.server import BaseHTTPRequestHandler
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 ADMIN_CHAT_ID = os.environ.get("ADMIN_CHAT_ID", "")
-# ADMIN_CHAT_ID может содержать несколько chat_id через запятую — заказы
-# уходят всем сразу (несколько админов/менеджеров).
-ADMIN_CHAT_IDS = [c.strip() for c in ADMIN_CHAT_ID.split(",") if c.strip()]
+# ADMIN_CHAT_ID_EXTRA — доп. переменная для новых админов, чтобы не трогать
+# ADMIN_CHAT_ID (он сохранён в Vercel как Secret и его нельзя посмотреть/
+# дописать не затерев). Тоже может содержать несколько chat_id через запятую.
+ADMIN_CHAT_ID_EXTRA = os.environ.get("ADMIN_CHAT_ID_EXTRA", "")
+# Итоговый список получателей заказов — из обеих переменных, без повторов,
+# с сохранением порядка.
+ADMIN_CHAT_IDS = list(dict.fromkeys(
+    c.strip() for c in (ADMIN_CHAT_ID + "," + ADMIN_CHAT_ID_EXTRA).split(",") if c.strip()
+))
 MINI_APP_URL = os.environ.get("MINI_APP_URL", "")
 WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "")
 
@@ -381,6 +392,7 @@ class handler(BaseHTTPRequestHandler):
             "bot_token_set": bool(BOT_TOKEN),
             "mini_app_url_set": bool(MINI_APP_URL),
             "admin_chat_id_set": bool(ADMIN_CHAT_ID),
+            "admin_chat_id_extra_set": bool(ADMIN_CHAT_ID_EXTRA),
             "admin_chat_ids_count": len(ADMIN_CHAT_IDS),
             "webhook_secret_set": bool(WEBHOOK_SECRET),
             "kv_configured": kv_configured(),
