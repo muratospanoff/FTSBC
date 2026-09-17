@@ -35,12 +35,17 @@ async function saveProfile(profile) {
 
 // ---------- Состояние приложения ----------
 
+// Бесплатная доставка — от этой суммы заказа; меньше — только самовывоз.
+const FREE_DELIVERY_MIN = 10000;
+const PICKUP_ADDRESS = 'г. Алматы, м-он Самал-2, д. 20';
+
 const state = {
   cart: loadCart(),          // { productId: qty }
   category: null,
   country: null,
   regOrgForm: 'ИП',           // выбор в форме регистрации: 'ИП' | 'ТОО'
   buyerType: 'company',       // на финальном шаге: 'company' | 'self'
+  deliveryMethod: 'delivery', // 'delivery' | 'pickup'
 };
 
 const stack = [];            // стек экранов для кнопки "Назад"
@@ -350,7 +355,17 @@ function renderCart() {
   attachProductHandlers(list, renderCart);
 
   document.getElementById('cart-count').textContent = items.reduce((s,i)=>s+i.qty,0);
-  document.getElementById('cart-total').textContent = formatPrice(cartTotal());
+  const total = cartTotal();
+  document.getElementById('cart-total').textContent = formatPrice(total);
+
+  const hint = document.getElementById('cart-delivery-hint');
+  if (total >= FREE_DELIVERY_MIN) {
+    hint.textContent = `Доступна бесплатная доставка (от ${formatPrice(FREE_DELIVERY_MIN)}).`;
+    hint.className = 'field-hint';
+  } else {
+    hint.textContent = `Добавьте товаров ещё на ${formatPrice(FREE_DELIVERY_MIN - total)} для бесплатной доставки — иначе только самовывоз.`;
+    hint.className = 'field-hint field-hint--warn';
+  }
 }
 
 // ---------- Рендер: оформление заказа ----------
@@ -369,8 +384,7 @@ function renderCheckout() {
   document.getElementById('profile-summary-body').innerHTML = `
     <div class="checkout-item-row"><span>${p.orgForm || ''} «${p.companyName || '—'}»</span><span></span></div>
     <div class="checkout-item-row"><span>БИН</span><span>${p.bin || '—'}</span></div>
-    <div class="checkout-item-row"><span>Телефон</span><span>${p.phone || '—'}</span></div>
-    <div class="checkout-item-row"><span>Адрес доставки</span><span>${p.deliveryAddress || '—'}</span></div>`;
+    <div class="checkout-item-row"><span>Телефон</span><span>${p.phone || '—'}</span></div>`;
   document.querySelector('[data-buyer-type="company"]').textContent = `Для ${p.companyName || 'компании'}`;
 
   // сбрасываем форму на «Для компании» при каждом новом входе
@@ -378,6 +392,39 @@ function renderCheckout() {
   document.getElementById('field-self-iin').style.display = 'none';
   document.getElementById('f-self-iin').value = '';
   document.querySelectorAll('[data-buyer-type]').forEach((b, i) => b.classList.toggle('active', i === 0));
+
+  // способ получения — сбрасываем на «Доставка», если сумма позволяет
+  state.deliveryMethod = cartTotal() >= FREE_DELIVERY_MIN ? 'delivery' : 'pickup';
+  updateDeliveryUI();
+}
+
+// Обновляет сегмент «Способ получения», подсказку про минимальную сумму
+// и предпросмотр итогового адреса — вызывается при входе на экран и при
+// переключении способа.
+function updateDeliveryUI() {
+  const total = cartTotal();
+  const minOrderMet = total >= FREE_DELIVERY_MIN;
+  const p = PROFILE || {};
+
+  const deliveryBtn = document.querySelector('[data-delivery-method="delivery"]');
+  const pickupBtn = document.querySelector('[data-delivery-method="pickup"]');
+  deliveryBtn.disabled = !minOrderMet;
+  document.querySelectorAll('[data-delivery-method]').forEach(b => {
+    b.classList.toggle('active', b.dataset.deliveryMethod === state.deliveryMethod);
+  });
+
+  const hint = document.getElementById('delivery-hint');
+  if (!minOrderMet) {
+    const rest = formatPrice(FREE_DELIVERY_MIN - total);
+    hint.textContent = `Бесплатная доставка — от ${formatPrice(FREE_DELIVERY_MIN)}. Добавьте товаров ещё на ${rest}, либо оформите самовывоз.`;
+    hint.className = 'field-hint field-hint--warn';
+  } else {
+    hint.textContent = `Бесплатная доставка при заказе от ${formatPrice(FREE_DELIVERY_MIN)}.`;
+    hint.className = 'field-hint';
+  }
+
+  document.getElementById('delivery-address-preview').textContent =
+    state.deliveryMethod === 'pickup' ? PICKUP_ADDRESS : (p.deliveryAddress || '—');
 }
 
 // Возвращает {ok, age} по ИИН РК: первые 6 цифр — ГГММДД, 7-я — век/пол.
@@ -562,6 +609,15 @@ document.querySelectorAll('[data-buyer-type]').forEach(btn => {
   });
 });
 
+document.querySelectorAll('[data-delivery-method]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.disabled) return;
+    state.deliveryMethod = btn.dataset.deliveryMethod;
+    updateDeliveryUI();
+    haptic('select');
+  });
+});
+
 document.getElementById('checkout-form').addEventListener('submit', (e) => {
   e.preventDefault();
 
@@ -603,9 +659,15 @@ document.getElementById('checkout-form').addEventListener('submit', (e) => {
     }
   }
 
+  // Подстраховка: если сумма вдруг перестала дотягивать до бесплатной
+  // доставки (например, что-то пересчиталось), самовывоз — единственный
+  // вариант, независимо от того, что было выбрано раньше на экране.
+  const deliveryMethod = cartTotal() >= FREE_DELIVERY_MIN ? state.deliveryMethod : 'pickup';
+  const deliveryAddress = deliveryMethod === 'pickup' ? PICKUP_ADDRESS : p.deliveryAddress;
+
   const customer = {
     orgForm: p.orgForm, companyName: p.companyName, bin: p.bin,
-    legalAddress: p.legalAddress, deliveryAddress: p.deliveryAddress, phone: p.phone,
+    legalAddress: p.legalAddress, deliveryMethod, deliveryAddress, phone: p.phone,
     buyerType: state.buyerType, selfIin, comment,
   };
 

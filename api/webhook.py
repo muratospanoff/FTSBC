@@ -113,7 +113,7 @@ PHONE_BUTTON_TEXT = "📱 Отправить мой номер телефона"
 # Mini App по точному URL и не подхватывают Cache-Control. Добавляем
 # версию в query — при каждом значимом деплое фронтенда меняйте эту
 # строку, чтобы /start выдавал заведомо "новый" адрес.
-BUILD_VERSION = "20260913c"
+BUILD_VERSION = "20260917a"
 
 
 def call_telegram(method, payload):
@@ -153,7 +153,11 @@ def format_order(order):
     lines.append(f"🧾 БИН/ИИН компании: {customer.get('bin', '—')}")
     lines.append(f"📞 {customer.get('phone', '—')}")
     lines.append(f"📍 Юр. адрес: {customer.get('legalAddress', '—')}")
-    lines.append(f"🚚 Адрес доставки: {customer.get('deliveryAddress', '—')}")
+
+    if customer.get("deliveryMethod") == "pickup":
+        lines.append(f"🏬 Самовывоз: {customer.get('deliveryAddress', '—')}")
+    else:
+        lines.append(f"🚚 Доставка (бесплатно): {customer.get('deliveryAddress', '—')}")
 
     if customer.get("buyerType") == "self":
         lines.append(f"🙋 Заказ для себя лично (ИИН: {customer.get('selfIin', '—')})")

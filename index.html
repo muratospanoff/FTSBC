@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>FORCE TRADE SERVICE</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<link rel="stylesheet" href="style.css?v=20260913c">
+<link rel="stylesheet" href="style.css?v=20260917a">
 </head>
 <body>
 
@@ -161,6 +161,7 @@
     <div class="cart-summary" id="cart-summary" style="display:none">
       <div class="cart-summary-row"><span>Позиций</span><span id="cart-count">0</span></div>
       <div class="cart-summary-row cart-summary-total"><span>Итого</span><span id="cart-total">0 ₸</span></div>
+      <div class="field-hint" id="cart-delivery-hint"></div>
       <button class="btn btn-secondary" id="btn-continue-shopping">Продолжить покупки</button>
     </div>
   </section>
@@ -190,6 +191,19 @@
         <span>Ваш ИИН *</span>
         <input type="text" id="f-self-iin" inputmode="numeric" placeholder="12 цифр, для проверки возраста">
       </label>
+
+      <div class="field">
+        <span>Способ получения *</span>
+        <div class="segmented">
+          <button type="button" class="segmented-btn active" data-delivery-method="delivery">Доставка</button>
+          <button type="button" class="segmented-btn" data-delivery-method="pickup">Самовывоз</button>
+        </div>
+        <div class="field-hint" id="delivery-hint"></div>
+      </div>
+
+      <div class="checkout-order-summary">
+        <div class="checkout-item-row"><span>Адрес получения</span><span id="delivery-address-preview">—</span></div>
+      </div>
 
       <label class="field">
         <span>Комментарий к заказу</span>
@@ -238,7 +252,7 @@
 
 </div>
 
-<script src="data.js?v=20260913c"></script>
-<script src="app.js?v=20260913c"></script>
+<script src="data.js?v=20260917a"></script>
+<script src="app.js?v=20260917a"></script>
 </body>
 </html>
