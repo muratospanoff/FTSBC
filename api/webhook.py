@@ -16,12 +16,15 @@ Telegram шлёт сюда POST-запрос при каждом новом со
     витрину» с подписанной ссылкой (uid+sig), по которой Mini App узнаёт,
     чей это профиль;
   - /id — присылает ID текущего чата (чтобы настроить ADMIN_CHAT_ID);
-  - принимает web_app_data (оформленный заказ из Mini App), пересылает в
-    ADMIN_CHAT_ID и отвечает покупателю подтверждением.
+  - принимает web_app_data (оформленный заказ из Mini App), пересылает всем
+    адресам из ADMIN_CHAT_ID и отвечает покупателю подтверждением.
 
 Нужные переменные окружения (Vercel → Settings → Environment Variables):
   BOT_TOKEN        — токен бота из @BotFather
-  ADMIN_CHAT_ID    — куда пересылать заказы (chat_id)
+  ADMIN_CHAT_ID    — куда пересылать заказы (chat_id). Можно указать
+                      несколько через запятую, чтобы заказы получали
+                      сразу несколько человек, например:
+                      "111111111,6994024445"
   MINI_APP_URL     — https-адрес витрины (обычно = адрес этого же деплоя)
   WEBHOOK_SECRET   — секрет для проверки заголовка X-Telegram-Bot-Api-Secret-Token
   + переменные хранилища (KV_REST_API_URL/TOKEN или UPSTASH_REDIS_REST_URL/TOKEN),
@@ -40,6 +43,9 @@ from http.server import BaseHTTPRequestHandler
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 ADMIN_CHAT_ID = os.environ.get("ADMIN_CHAT_ID", "")
+# ADMIN_CHAT_ID может содержать несколько chat_id через запятую — заказы
+# уходят всем сразу (несколько админов/менеджеров).
+ADMIN_CHAT_IDS = [c.strip() for c in ADMIN_CHAT_ID.split(",") if c.strip()]
 MINI_APP_URL = os.environ.get("MINI_APP_URL", "")
 WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "")
 
@@ -275,10 +281,13 @@ def handle_web_app_data(chat_id, raw_data, user_id):
     text = format_order(order)
     print(f"formatted admin text: {len(text)} chars")
 
-    target_chat = ADMIN_CHAT_ID or chat_id
-    print(f"sending admin message to target_chat={target_chat!r} (ADMIN_CHAT_ID env={ADMIN_CHAT_ID!r})")
-    admin_result = call_telegram("sendMessage", {"chat_id": target_chat, "text": text})
-    print(f"admin_result={admin_result}")
+    targets = ADMIN_CHAT_IDS or [chat_id]
+    print(f"sending admin message to targets={targets!r} (ADMIN_CHAT_ID env={ADMIN_CHAT_ID!r})")
+    admin_results = []
+    for target_chat in targets:
+        r = call_telegram("sendMessage", {"chat_id": target_chat, "text": text})
+        print(f"admin_result for {target_chat!r}: {r}")
+        admin_results.append({"chat_id": target_chat, "result": r})
 
     confirm_result = send_message(
         chat_id,
@@ -290,8 +299,8 @@ def handle_web_app_data(chat_id, raw_data, user_id):
     return {
         "handler": "web_app_data",
         "order_id": order.get("orderId"),
-        "admin_chat_used": target_chat,
-        "admin_send": admin_result,
+        "admin_chats_used": targets,
+        "admin_send": admin_results,
         "confirm_send": confirm_result,
     }
 
@@ -372,6 +381,7 @@ class handler(BaseHTTPRequestHandler):
             "bot_token_set": bool(BOT_TOKEN),
             "mini_app_url_set": bool(MINI_APP_URL),
             "admin_chat_id_set": bool(ADMIN_CHAT_ID),
+            "admin_chat_ids_count": len(ADMIN_CHAT_IDS),
             "webhook_secret_set": bool(WEBHOOK_SECRET),
             "kv_configured": kv_configured(),
             "kv_related_env_vars_found": kv_env_hint,
