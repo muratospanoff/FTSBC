@@ -9,6 +9,11 @@ POST /api/profile  {uid, sig, orgForm, companyName, bin, legalAddress,
 uid — Telegram user_id, подставляется ботом в адрес кнопки при /start.
 sig — подпись uid (HMAC по WEBHOOK_SECRET), без неё Mini App не может ни
 прочитать, ни записать чужой профиль.
+
+При ПЕРВОЙ успешной регистрации (профиля ещё не было в KV) всем chat_id
+из ADMIN_CHAT_ID/ADMIN_CHAT_ID_EXTRA уходит уведомление в Telegram —
+повторное сохранение того же профиля (например, если данные потом
+поменяются) уведомление не шлёт.
 """
 import hashlib
 import hmac
@@ -24,7 +29,57 @@ WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "")
 KV_URL = os.environ.get("KV_REST_API_URL") or os.environ.get("UPSTASH_REDIS_REST_URL") or ""
 KV_TOKEN = os.environ.get("KV_REST_API_TOKEN") or os.environ.get("UPSTASH_REDIS_REST_TOKEN") or ""
 
+# ---------- уведомление админов о новой регистрации — продублировано из
+# api/webhook.py (см. комментарий там про Vercel Python и общие модули).
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
+API_BASE = f"https://api.telegram.org/bot{BOT_TOKEN}"
+ADMIN_CHAT_ID = os.environ.get("ADMIN_CHAT_ID", "")
+ADMIN_CHAT_ID_EXTRA = os.environ.get("ADMIN_CHAT_ID_EXTRA", "")
+ADMIN_CHAT_IDS = list(dict.fromkeys(
+    c.strip() for c in (ADMIN_CHAT_ID + "," + ADMIN_CHAT_ID_EXTRA).split(",") if c.strip()
+))
+
 REQUIRED_FIELDS = ["orgForm", "companyName", "bin", "legalAddress", "deliveryAddress"]
+
+
+def call_telegram(method, payload):
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        f"{API_BASE}/{method}", data=data, headers={"Content-Type": "application/json"}, method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        print(f"Telegram API HTTPError ({method}): {e.code} {e.read().decode('utf-8', errors='replace')}")
+        return {"ok": False}
+    except Exception as e:
+        print(f"Telegram API error ({method}): {e}")
+        return {"ok": False}
+
+
+def notify_admins_new_registration(uid, profile, phone):
+    if not (BOT_TOKEN and ADMIN_CHAT_IDS):
+        return
+    who = f"id{uid}"
+    chat_info = call_telegram("getChat", {"chat_id": uid})
+    if chat_info.get("ok"):
+        r = chat_info.get("result", {})
+        name = " ".join(p for p in (r.get("first_name"), r.get("last_name")) if p)
+        username = f"@{r['username']}" if r.get("username") else ""
+        who = " ".join(p for p in (name, username) if p) or who
+
+    text = (
+        "🆕 Новая регистрация в витрине\n\n"
+        f"{profile.get('orgForm', '—')} «{profile.get('companyName', '—')}»\n"
+        f"🧾 БИН: {profile.get('bin', '—')}\n"
+        f"📍 Юр. адрес: {profile.get('legalAddress', '—')}\n"
+        f"🚚 Адрес доставки: {profile.get('deliveryAddress', '—')}\n"
+        f"📞 {phone or '—'}\n"
+        f"👤 Telegram: {who}"
+    )
+    for chat_id in ADMIN_CHAT_IDS:
+        call_telegram("sendMessage", {"chat_id": chat_id, "text": text})
 
 
 def kv_configured():
@@ -134,7 +189,10 @@ class handler(BaseHTTPRequestHandler):
             self._send_json(200, {"ok": False, "error": "storage not configured"})
             return
 
+        is_new = kv_get_json(f"profile:{uid}") is None
         profile = {f: str(data[f]).strip() for f in REQUIRED_FIELDS}
         saved = kv_set(f"profile:{uid}", profile)
         phone = kv_get(f"phone:{uid}")
+        if saved and is_new:
+            notify_admins_new_registration(uid, profile, phone)
         self._send_json(200, {"ok": bool(saved), "profile": profile, "phone": phone})
