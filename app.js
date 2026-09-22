@@ -302,31 +302,44 @@ function productRowHTML(p) {
     </div>`;
 }
 
+// Один делегированный обработчик на весь контейнер вместо отдельного
+// addEventListener на каждую кнопку каждой карточки. Раньше при частичной
+// перерисовке одной карточки (ветка без onChange) функция рекурсивно
+// вызывала сама себя на ВЕСЬ контейнер — старые обработчики на остальных
+// кнопках при этом не снимались, и они накапливались с каждым кликом.
+// В результате один тап через некоторое время срабатывал сразу N раз —
+// количество могло скакнуть не на 1, а на 9/100/500. Делегирование этого
+// не допускает: обработчик всего один, привязывается один раз и работает,
+// даже если разметка внутри контейнера полностью перерисована.
 function attachProductHandlers(container, onChange) {
-  container.querySelectorAll('.product-card').forEach(card => {
+  if (container._handlersAttached) return;
+  container._handlersAttached = true;
+
+  container.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn || !container.contains(btn)) return;
+    const card = btn.closest('.product-card');
+    if (!card) return;
     const id = Number(card.dataset.id);
-    card.querySelectorAll('[data-action]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const action = btn.dataset.action;
-        if (action === 'zoom') {
-          const p = productById(id);
-          if (p && p.image) openLightbox(p.image, p.name);
-          return;
-        }
-        if (action === 'add' || action === 'plus') changeQty(id, +1);
-        if (action === 'minus') changeQty(id, -1);
-        if (onChange) {
-          onChange();
-        } else {
-          // перерисовываем только эту карточку
-          const fresh = document.createElement('div');
-          fresh.innerHTML = productRowHTML(productById(id));
-          card.replaceWith(fresh.firstElementChild);
-          attachProductHandlers(container, onChange);
-        }
-        syncCartBar();
-      });
-    });
+    const action = btn.dataset.action;
+
+    if (action === 'zoom') {
+      const p = productById(id);
+      if (p && p.image) openLightbox(p.image, p.name);
+      return;
+    }
+    if (action === 'add' || action === 'plus') changeQty(id, +1);
+    if (action === 'minus') changeQty(id, -1);
+    if (onChange) {
+      onChange();
+    } else {
+      // перерисовываем только эту карточку — обработчик уже на контейнере,
+      // повторно навешивать ничего не нужно
+      const fresh = document.createElement('div');
+      fresh.innerHTML = productRowHTML(productById(id));
+      card.replaceWith(fresh.firstElementChild);
+    }
+    syncCartBar();
   });
 }
 

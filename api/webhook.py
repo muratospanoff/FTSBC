@@ -113,7 +113,7 @@ PHONE_BUTTON_TEXT = "📱 Отправить мой номер телефона"
 # Mini App по точному URL и не подхватывают Cache-Control. Добавляем
 # версию в query — при каждом значимом деплое фронтенда меняйте эту
 # строку, чтобы /start выдавал заведомо "новый" адрес.
-BUILD_VERSION = "20260922c"
+BUILD_VERSION = "20260922d"
 
 
 def call_telegram(method, payload):
