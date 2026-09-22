@@ -6,6 +6,7 @@
 // снова появится на складе.
 const VISIBLE_BRANDS = new Set([
   'KARTULI MARANI', 'TRALCIO', 'CASA DEFRA', 'FRESCHELLO', 'LAFAGE', 'BEAUVIGNAC', 'KINAHANS',
+  'REMESLO', 'GASTRONOM',
 ]);
 // Внутри Kinahans пока в наличии только LL и LL GB — остальные позиции
 // бренда (Small Batch, Special Release и т.д.) скрыты тем же способом.
