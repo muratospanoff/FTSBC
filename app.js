@@ -20,6 +20,11 @@ const HIDDEN_PRODUCT_NAMES = new Set([
   'Вино красное полусладкое Freschello Rosso',
   'Вино красное сухое Gran Bericanto Riserva',
   'Вино красное сухое Amarone Casa Defra',
+  'Вино розовое полусладкое Алазанская долина Kartuli Marani',
+  'Вино красное полусладкое Ахашени Kartuli Marani',
+  'Вино красное сухое Мукузани Kartuli Marani',
+  'Вино красное полусладкое Оджалеши Kartuli Marani',
+  'Вино белое полусладкое Твиши Kartuli Marani',
 ]);
 PRODUCTS.splice(0, PRODUCTS.length, ...PRODUCTS.filter(p => {
   const brand = (p.brand || '').toUpperCase();
