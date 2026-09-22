@@ -5,16 +5,27 @@
 // data.js, ничего не удаляется) — уберите/расширьте список, когда товар
 // снова появится на складе.
 const VISIBLE_BRANDS = new Set([
-  'KARTULI MARANI', 'TRALCIO', 'CASA DEFRA', 'FRESCHELLO', 'LAFAGE', 'BEAUVIGNAC', 'KINAHANS',
+  'KARTULI MARANI', 'TRALCIO', 'CASA DEFRA', 'FRESCHELLO', 'KINAHANS',
   'REMESLO', 'GASTRONOM',
+  // LAFAGE и BEAUVIGNAC убраны — это единственные бренды из Франции,
+  // вся Франция сейчас скрыта целиком.
 ]);
 // Внутри Kinahans пока в наличии только LL и LL GB — остальные позиции
 // бренда (Small Batch, Special Release и т.д.) скрыты тем же способом.
 const KINAHANS_VISIBLE_NAME = /(^|\s)LL(\s+GB)?$/i;
+// Отдельные позиции внутри иначе видимых брендов, скрытые точечно (нет в
+// наличии) — сверяем по точному названию из data.js.
+const HIDDEN_PRODUCT_NAMES = new Set([
+  'Вино красное полусухое Freschello Rosso',
+  'Вино красное полусладкое Freschello Rosso',
+  'Вино красное сухое Gran Bericanto Riserva',
+  'Вино красное сухое Amarone Casa Defra',
+]);
 PRODUCTS.splice(0, PRODUCTS.length, ...PRODUCTS.filter(p => {
   const brand = (p.brand || '').toUpperCase();
   if (!VISIBLE_BRANDS.has(brand)) return false;
   if (brand === 'KINAHANS') return KINAHANS_VISIBLE_NAME.test((p.name || '').trim());
+  if (HIDDEN_PRODUCT_NAMES.has(p.name)) return false;
   return true;
 }));
 
